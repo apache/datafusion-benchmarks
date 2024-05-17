@@ -48,7 +48,7 @@ $SPARK_HOME/bin/spark-submit \
     tpcbench.py \
     --benchmark tpch \
     --data /path/to/parquet-data \
-    --queries ../../tpch/queries/sf\=1/
+    --queries ../../tpch/queries/
 ```
 
 When benchmarking Comet, we are generally interested in comparing the performance of Spark with Comet disabled to

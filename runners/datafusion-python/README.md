@@ -23,5 +23,5 @@ under the License.
 python tpcbench.py \
     --benchmark tpch \
     --data /path/to/parquet-data \
-    --queries ../../tpch/queries/sf\=1/
+    --queries ../../tpch/queries/
 ```
