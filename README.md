@@ -49,14 +49,17 @@ Throughout this document and when talking about these benchmarks, you will see t
 DataFusion benchmarks are a Non-TPC Benchmark. Any comparison between official TPC Results with non-TPC workloads is
 prohibited by the TPC.
 
-## TPC-H Data Generation
+## TPC-H Data & Query Generation
 
 Coming soon.
 
-## TPC-DS Query Generation
+As a convenience, queries are checked into this repository for scale factors 1 (1 GB) through 1000 (1 TB).
 
-As a convenience, queries are checked into this repository for scale factors 1 (1 GB) through 1000 (1 TB) for
-both TPC-H and TPC-DS.
+## TPC-DS Data & Query Generation
+
+Coming soon.
+
+As a convenience, queries are checked into this repository for scale factors 1 (1 GB) through 1000 (1 TB).
 
 ## Converting CSV data to Parquet
 
