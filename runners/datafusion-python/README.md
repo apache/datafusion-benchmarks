@@ -22,7 +22,6 @@ under the License.
 ```shell
 python tpcbench.py \
     --benchmark tpch \
-    --data /Users/andy/Data/sf1-parquet/ \
+    --data /path/to/parquet-data \
     --queries ../../tpch/queries/sf\=1/
 ```
-    

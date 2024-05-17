@@ -19,8 +19,14 @@ under the License.
 
 # DataFusion Comet Benchmark derived from TPC-H and TPC-DS
 
-Follow the [Comet Installation](https://datafusion.apache.org/comet/user-guide/installation.html) guide to download or 
-create a Comet JAR file.
+Follow the [Comet Installation](https://datafusion.apache.org/comet/user-guide/installation.html) guide to download or
+create a Comet JAR file and then set the `COMET_JAR` environment variable to point to that jar file.
+
+```shell
+export COMET_JAR=spark/target/comet-spark-spark3.4_2.12-0.1.0-SNAPSHOT.jar
+```
+
+Set up `SPARK_HOME` to point to the relevant Spark version and use `spark-submit` to run the benchmark script.
 
 ```shell
 export COMET_JAR=spark/target/comet-spark-spark3.4_2.12-0.1.0-SNAPSHOT.jar
@@ -37,7 +43,10 @@ $SPARK_HOME/bin/spark-submit \
     --conf spark.comet.explainFallback.enabled=true \
     tpcbench.py \
     --benchmark tpch \
-    --data /Users/andy/Data/sf1-parquet/ \
+    --data /path/to/parquet-data \
     --queries ../../tpch/queries/sf\=1/
 ```
-    
+
+When benchmarking Comet, we are generally interested in comparing the performance of Spark with Comet disabled to
+the performance of Spark with Comet enabled. Comet can be enabled or disabled by setting the `spark.comet.exec.enabled`
+config appropriately.
