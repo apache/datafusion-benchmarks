@@ -28,6 +28,10 @@ export COMET_JAR=spark/target/comet-spark-spark3.4_2.12-0.1.0-SNAPSHOT.jar
 
 Set up `SPARK_HOME` to point to the relevant Spark version and use `spark-submit` to run the benchmark script.
 
+The follow example is for running in local mode, which can be convenient when running locally against small scale
+factors but is not representative of real-world use. It is recommended that benchmarks are run against a properly 
+configured Spark cluster. 
+
 ```shell
 export COMET_JAR=spark/target/comet-spark-spark3.4_2.12-0.1.0-SNAPSHOT.jar
 
