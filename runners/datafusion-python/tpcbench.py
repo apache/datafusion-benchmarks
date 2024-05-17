@@ -23,8 +23,10 @@ def main(benchmark: str, data_path: str, query_path: str):
 
     # Register the tables
     if benchmark == "tpch":
+        num_queries = 22
         table_names = ["customer", "lineitem", "nation", "orders", "part", "partsupp", "region", "supplier"]
     elif benchmark == "tpcds":
+        num_queries = 99
         table_names = ["call_center", "catalog_page", "catalog_returns", "catalog_sales", "customer",
            "customer_address", "customer_demographics", "date_dim", "time_dim", "household_demographics",
            "income_band", "inventory", "item", "promotion", "reason", "ship_mode", "store", "store_returns",
@@ -39,7 +41,7 @@ def main(benchmark: str, data_path: str, query_path: str):
         print(f"Registering table {table} using path {path}")
         ctx.register_parquet(table, path)
 
-    for query in range(1, 23):
+    for query in range(1, num_queries + 1):
         # read text file
         path = f"{query_path}/q{query}.sql"
         print(f"Reading query {query} using path {path}")
