@@ -29,9 +29,6 @@ TPC-H and TPC-DS both operate on synthetic data, which can be generated at diffe
 of 1 means that approximately 1 GB of CSV data is generated, and a scale factor of 1000 means that approximately 1 TB
 of data is generated.
 
-In addition to generating data, both of these benchnmarks provide tools for generating queries for different scale
-factors as well. The literal values used in the queries will vary depending on the scale factor.
-
 ## TPC Legal Considerations
 
 It is important to know that TPC benchmarks are copyrighted IP of the Transaction Processing Council. Only members
