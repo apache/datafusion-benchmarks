@@ -16,7 +16,11 @@
 # under the License.
 
 import argparse
+
+import datafusion
 from datafusion import SessionContext
+from datetime import datetime
+import json
 import time
 
 def main(benchmark: str, data_path: str, query_path: str):
@@ -41,6 +45,14 @@ def main(benchmark: str, data_path: str, query_path: str):
         print(f"Registering table {table} using path {path}")
         ctx.register_parquet(table, path)
 
+    results = {
+        'engine': 'datafusion-python',
+        'datafusion-version': datafusion.__version__,
+        'benchmark': benchmark,
+        'data_path': data_path,
+        'query_path': query_path
+    }
+
     for query in range(1, num_queries + 1):
         # read text file
         path = f"{query_path}/q{query}.sql"
@@ -61,6 +73,16 @@ def main(benchmark: str, data_path: str, query_path: str):
                     print(f"Query {query} returned {len(rows)} rows")
             end_time = time.time()
             print(f"Query {query} took {end_time - start_time} seconds")
+
+            # store timings in list and later add option to run > 1 iterations
+            results[query] = [end_time - start_time]
+
+    str = json.dumps(results, indent=4)
+    current_time_millis = int(datetime.now().timestamp() * 1000)
+    results_path = f"datafusion-python-{benchmark}-{current_time_millis}.json"
+    print(f"Writing results to {results_path}")
+    with open(results_path, "w") as f:
+        f.write(str)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="DataFusion benchmark derived from TPC-H / TPC-DS")
