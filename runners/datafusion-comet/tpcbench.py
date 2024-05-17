@@ -16,15 +16,22 @@
 # under the License.
 
 import argparse
-from datafusion import SessionContext
+from pyspark.sql import SparkSession
 import time
 
 def main(benchmark: str, data_path: str, query_path: str):
 
+    # Initialize a SparkSession
+    spark = SparkSession.builder \
+        .appName("DataFusion Benchmark derived from TPC-H / TPC-DS") \
+        .getOrCreate()
+
     # Register the tables
     if benchmark == "tpch":
+        num_queries = 22
         table_names = ["customer", "lineitem", "nation", "orders", "part", "partsupp", "region", "supplier"]
     elif benchmark == "tpcds":
+        num_queries = 99
         table_names = ["call_center", "catalog_page", "catalog_returns", "catalog_sales", "customer",
            "customer_address", "customer_demographics", "date_dim", "time_dim", "household_demographics",
            "income_band", "inventory", "item", "promotion", "reason", "ship_mode", "store", "store_returns",
@@ -32,14 +39,13 @@ def main(benchmark: str, data_path: str, query_path: str):
     else:
         raise "invalid benchmark"
 
-    ctx = SessionContext()
-
     for table in table_names:
         path = f"{data_path}/{table}.parquet"
         print(f"Registering table {table} using path {path}")
-        ctx.register_parquet(table, path)
+        df = spark.read.parquet(path)
+        df.createOrReplaceTempView(table)
 
-    for query in range(1, 23):
+    for query in range(1, num_queries+1):
         # read text file
         path = f"{query_path}/q{query}.sql"
         print(f"Reading query {query} using path {path}")
@@ -53,12 +59,15 @@ def main(benchmark: str, data_path: str, query_path: str):
                 sql = sql.strip()
                 if len(sql) > 0:
                     print(f"Executing: {sql}")
-                    df = ctx.sql(sql)
+                    df = spark.sql(sql)
                     rows = df.collect()
 
                     print(f"Query {query} returned {len(rows)} rows")
             end_time = time.time()
             print(f"Query {query} took {end_time - start_time} seconds")
+
+    # Stop the SparkSession
+    spark.stop()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="DataFusion benchmark derived from TPC-H / TPC-DS")
