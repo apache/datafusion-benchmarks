@@ -16,6 +16,8 @@
 # under the License.
 
 import argparse
+from datetime import datetime
+import json
 from pyspark.sql import SparkSession
 import time
 
@@ -45,6 +47,13 @@ def main(benchmark: str, data_path: str, query_path: str):
         df = spark.read.parquet(path)
         df.createOrReplaceTempView(table)
 
+    results = {
+        'engine': 'datafusion-comet',
+        'benchmark': benchmark,
+        'data_path': data_path,
+        'query_path': query_path
+    }
+
     for query in range(1, num_queries+1):
         # read text file
         path = f"{query_path}/q{query}.sql"
@@ -65,6 +74,16 @@ def main(benchmark: str, data_path: str, query_path: str):
                     print(f"Query {query} returned {len(rows)} rows")
             end_time = time.time()
             print(f"Query {query} took {end_time - start_time} seconds")
+
+            # store timings in list and later add option to run > 1 iterations
+            results[query] = [end_time - start_time]
+
+    str = json.dumps(results, indent=4)
+    current_time_millis = int(datetime.now().timestamp() * 1000)
+    results_path = f"datafusion-comet-{benchmark}-{current_time_millis}.json"
+    print(f"Writing results to {results_path}")
+    with open(results_path, "w") as f:
+        f.write(str)
 
     # Stop the SparkSession
     spark.stop()
