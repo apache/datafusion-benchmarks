@@ -23,7 +23,7 @@ def main(benchmark: str, data_path: str, query_path: str):
 
     # Initialize a SparkSession
     spark = SparkSession.builder \
-        .appName("DataFusion Benchmark derived from TPC-H / TPC-DS") \
+        .appName("DataFusion Comet Benchmark derived from TPC-H / TPC-DS") \
         .getOrCreate()
 
     # Register the tables
