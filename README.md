@@ -53,13 +53,13 @@ prohibited by the TPC.
 
 Coming soon.
 
-As a convenience, queries are checked into this repository for scale factors 1 (1 GB) through 1000 (1 TB).
+As a convenience, generated queries are checked into this repository.
 
 ## TPC-DS Data & Query Generation
 
 Coming soon.
 
-As a convenience, queries are checked into this repository for scale factors 1 (1 GB) through 1000 (1 TB).
+As a convenience, generated queries are checked into this repository.
 
 ## Converting CSV data to Parquet
 
