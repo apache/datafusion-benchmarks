@@ -50,31 +50,10 @@ want to write your own scripts using DataFusion or Spark. Another option is to u
 
 ## Running the Benchmarks with DataFusion
 
-### DataFusion Rust
+Scripts are available for the following DataFusion projects:
 
-Coming soon.
-
-### DataFusion Python
-
-Coming soon.
-
-### DataFusion Comet 
-
-Coming soon.
-
-### DataFusion Ballista 
-
-Coming soon.
-
-## Running the Benchmarks with Other OSS Query Engines
-
-### DuckDB
-
-Coming soon.
-
-### Polars
-
-Coming soon.
+- [DataFusion Python](./runners/datafusion-python)
+- [DataFusion Comet](./runners/datafusion-comet)
 
 ## Comparing Results 
 
