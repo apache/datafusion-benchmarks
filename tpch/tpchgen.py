@@ -25,6 +25,11 @@ def run(cmd: str):
     print(f"Executing: {cmd}")
     subprocess.run(cmd, shell=True)
 
+def convert_tbl_to_parquet(ctx: SessionContext, tbl_filename: str, file_extension: str, parquet_filename: str):
+    print(f"Converting {tbl_filename} to {parquet_filename} ...")
+    df = ctx.read_csv(tbl_filename, has_header=False, file_extension=file_extension, delimiter="|")
+    df.write_parquet(parquet_filename)
+
 def generate_tpch(scale_factor: int, partitions: int):
     if partitions == 1:
         command = f"docker run -v `pwd`/data:/data -it --rm ghcr.io/scalytics/tpch-docker:main -vf -s {scale_factor}"
@@ -33,10 +38,7 @@ def generate_tpch(scale_factor: int, partitions: int):
         # convert to parquet
         ctx = SessionContext()
         for table in table_names:
-            file = f"data/{table}.tbl"
-            print(f"Converting {file} to Parquet format ...")
-            df = ctx.read_csv(file, has_header=False, file_extension="tbl", delimiter="|")
-            df.write_parquet(f"data/{table}.parquet")
+            convert_tbl_to_parquet(ctx, f"data/{table}.tbl", "tbl", f"data/{table}.parquet")
 
     else:
         for part in range(1, partitions+1):
@@ -49,16 +51,10 @@ def generate_tpch(scale_factor: int, partitions: int):
             run("mkdir -p data/{table}.parquet")
             if table == "nation" or table == "region":
                 # nation and region are special cases and do not generate multiple files
-                file = f"data/{table}.tbl"
-                print(f"Converting {file} to Parquet format ...")
-                df = ctx.read_csv(file, has_header=False, file_extension="tbl", delimiter="|")
-                df.write_parquet(f"data/{table}.parquet/part1.parquet")
+                convert_tbl_to_parquet(ctx, f"data/{table}.tbl", "tbl", f"data/{table}.parquet/part1.parquet")
             else:
                 for part in range(1, partitions + 1):
-                    file = f"data/{table}.tbl.{part}"
-                    print(f"Converting {file} to Parquet format ...")
-                    df = ctx.read_csv(file, has_header=False, file_extension=f"tbl.{part}", delimiter="|")
-                    df.write_parquet(f"data/{table}.parquet/part{part}.parquet")
+                    convert_tbl_to_parquet(ctx, f"data/{table}.tbl.{part}", f"tbl.{part}", f"data/{table}.parquet/part{part}.parquet")
 
 
 if __name__ == '__main__':
