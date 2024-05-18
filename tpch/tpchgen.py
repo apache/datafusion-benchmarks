@@ -52,7 +52,7 @@ def generate_tpch(scale_factor: int, partitions: int):
                 file = f"data/{table}.tbl"
                 print(f"Converting {file} to Parquet format ...")
                 df = ctx.read_csv(file, has_header=False, file_extension="tbl", delimiter="|")
-                df.write_parquet(f"data/{table}.parquet")
+                df.write_parquet(f"data/{table}.parquet/part1.parquet")
             else:
                 for part in range(1, partitions + 1):
                     file = f"data/{table}.tbl.{part}"
