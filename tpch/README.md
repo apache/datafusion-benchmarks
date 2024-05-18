@@ -30,10 +30,16 @@ Databricks provides tooling for generating TPC-H datasets in a Spark cluster:
 For local development and testing, we provide a Python script to generate TPC-H CSV data and convert it into Parquet, 
 using DataFusion.
 
+The script requires Docker to be available because it uses the Docker image `ghcr.io/scalytics/tpch-docker` to run
+the TPC-H data generator.
+
+Data can be generated as a single Parquet file per table by specifying `--partitions 1`. 
+
 ```shell
 python tpchgen.py --scale-factor 1 --partitions 1
 ```
+Data can be generated as multiple Parquet files per table by specifying `--partitions` greater than one. 
 
-
-
-
+```shell
+python tpchgen.py --scale-factor 100 --partitions 16
+```
