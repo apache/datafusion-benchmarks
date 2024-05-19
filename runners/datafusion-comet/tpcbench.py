@@ -65,7 +65,7 @@ def main(benchmark: str, data_path: str, query_path: str):
 
             start_time = time.time()
             for sql in queries:
-                sql = sql.strip()
+                sql = sql.strip().replace("create view", "create temp view")
                 if len(sql) > 0:
                     print(f"Executing: {sql}")
                     df = spark.sql(sql)
