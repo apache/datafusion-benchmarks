@@ -21,7 +21,7 @@ import json
 from pyspark.sql import SparkSession
 import time
 
-def main(benchmark: str, data_path: str, query_path: str):
+def main(benchmark: str, data_path: str, query_path: str, iterations: int):
 
     # Initialize a SparkSession
     spark = SparkSession.builder \
@@ -47,40 +47,49 @@ def main(benchmark: str, data_path: str, query_path: str):
         df = spark.read.parquet(path)
         df.createOrReplaceTempView(table)
 
+    conf_dict = {k: v for k, v in spark.sparkContext.getConf().getAll()}
+
     results = {
         'engine': 'datafusion-comet',
         'benchmark': benchmark,
         'data_path': data_path,
-        'query_path': query_path
+        'query_path': query_path,
+        'spark_conf': conf_dict,
     }
 
-    for query in range(1, num_queries+1):
-        # read text file
-        path = f"{query_path}/q{query}.sql"
-        print(f"Reading query {query} using path {path}")
-        with open(path, "r") as f:
-            text = f.read()
-            # each file can contain multiple queries
-            queries = text.split(";")
+    for iteration in range(0, iterations):
+        print(f"Starting iteration {iteration} of {iterations}")
 
-            start_time = time.time()
-            for sql in queries:
-                sql = sql.strip().replace("create view", "create temp view")
-                if len(sql) > 0:
-                    print(f"Executing: {sql}")
-                    df = spark.sql(sql)
-                    rows = df.collect()
+        for query in range(1, num_queries+1):
+            spark.sparkContext.setJobDescription(f"TPC-H q{query}")
 
-                    print(f"Query {query} returned {len(rows)} rows")
-            end_time = time.time()
-            print(f"Query {query} took {end_time - start_time} seconds")
+            # read text file
+            path = f"{query_path}/q{query}.sql"
+            print(f"Reading query {query} using path {path}")
+            with open(path, "r") as f:
+                text = f.read()
+                # each file can contain multiple queries
+                queries = text.split(";")
 
-            # store timings in list and later add option to run > 1 iterations
-            results[query] = [end_time - start_time]
+                start_time = time.time()
+                for sql in queries:
+                    sql = sql.strip().replace("create view", "create temp view")
+                    if len(sql) > 0:
+                        print(f"Executing: {sql}")
+                        df = spark.sql(sql)
+                        rows = df.collect()
+
+                        print(f"Query {query} returned {len(rows)} rows")
+                end_time = time.time()
+                print(f"Query {query} took {end_time - start_time} seconds")
+
+                # store timings in list and later add option to run > 1 iterations
+                query_timings = results.setdefault(query, [])
+                query_timings.append(end_time - start_time)
 
     str = json.dumps(results, indent=4)
     current_time_millis = int(datetime.now().timestamp() * 1000)
-    results_path = f"datafusion-comet-{benchmark}-{current_time_millis}.json"
+    results_path = f"spark-{benchmark}-{current_time_millis}.json"
     print(f"Writing results to {results_path}")
     with open(results_path, "w") as f:
         f.write(str)
@@ -93,6 +102,7 @@ if __name__ == "__main__":
     parser.add_argument("--benchmark", required=True, help="Benchmark to run (tpch or tpcds)")
     parser.add_argument("--data", required=True, help="Path to data files")
     parser.add_argument("--queries", required=True, help="Path to query files")
+    parser.add_argument("--iterations", required=False, default="1", help="How many iterations to run")
     args = parser.parse_args()
 
-    main(args.benchmark, args.data, args.queries)
+    main(args.benchmark, args.data, args.queries, int(args.iterations))
