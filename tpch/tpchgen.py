@@ -40,7 +40,7 @@ def convert_tbl_to_parquet(ctx: SessionContext, tbl_filename: str, file_extensio
 def generate_tpch(scale_factor: int, partitions: int):
     if partitions == 1:
         command = f"docker run -v `pwd`/data:/data -t --rm ghcr.io/scalytics/tpch-docker:main -vf -s {scale_factor}"
-        run(command, "/tmp/tpchgen.log")
+        run_and_log_output(command, "/tmp/tpchgen.log")
 
         # convert to parquet
         ctx = SessionContext()
