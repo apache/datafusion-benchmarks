@@ -25,12 +25,12 @@ table_names = ["customer", "lineitem", "nation", "orders", "part", "partsupp", "
 
 def run(cmd: str):
     print(f"Executing: {cmd}")
-    subprocess.run(cmd, shell=True)
+    subprocess.run(cmd, shell=True, check=True)
 
 def run_and_log_output(cmd: str, log_file: str):
     print(f"Executing: {cmd}; writing output to {log_file}")
     with open(log_file, "w") as file:
-        subprocess.run(cmd, shell=True, stdout=file, stderr=subprocess.STDOUT)
+        subprocess.run(cmd, shell=True, check=True, stdout=file, stderr=subprocess.STDOUT)
 
 def convert_tbl_to_parquet(ctx: SessionContext, tbl_filename: str, file_extension: str, parquet_filename: str):
     print(f"Converting {tbl_filename} to {parquet_filename} ...")
@@ -39,7 +39,7 @@ def convert_tbl_to_parquet(ctx: SessionContext, tbl_filename: str, file_extensio
 
 def generate_tpch(scale_factor: int, partitions: int):
     if partitions == 1:
-        command = f"docker run -v `pwd`/data:/data -it --rm ghcr.io/scalytics/tpch-docker:main -vf -s {scale_factor}"
+        command = f"docker run -v `pwd`/data:/data -t --rm ghcr.io/scalytics/tpch-docker:main -vf -s {scale_factor}"
         run(command, "/tmp/tpchgen.log")
 
         # convert to parquet
@@ -53,7 +53,7 @@ def generate_tpch(scale_factor: int, partitions: int):
 
         # List of commands to run
         commands = [
-            (f"docker run -v `pwd`/data:/data -it --rm ghcr.io/scalytics/tpch-docker:main -vf -s {scale_factor} -C {partitions} -S {part}",
+            (f"docker run -v `pwd`/data:/data -t --rm ghcr.io/scalytics/tpch-docker:main -vf -s {scale_factor} -C {partitions} -S {part}",
              f"/tmp/tpchgen-part{part}.log")
             for part in range(1, partitions + 1)
         ]
