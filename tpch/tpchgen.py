@@ -139,7 +139,7 @@ def convert_tbl_to_parquet(ctx: SessionContext, table: str, tbl_filename: str, f
 
     df = ctx.read_csv(tbl_filename, schema=schema, has_header=False, file_extension=file_extension, delimiter="|")
     df = df.select_columns(*output_cols)
-    df.write_parquet(parquet_filename)
+    df.write_parquet(parquet_filename, compression="snappy")
 
 def generate_tpch(scale_factor: int, partitions: int):
     start_time = time.time()
