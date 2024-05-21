@@ -100,7 +100,7 @@ all_schemas["partsupp"] = [
 all_schemas["region"] = [
     ("R_REGIONKEY", pyarrow.int32()),
     ("R_NAME", pyarrow.string()),
-    ("r_COMMENT", pyarrow.string()),
+    ("R_COMMENT", pyarrow.string()),
 ]
 
 all_schemas["supplier"] = [
