@@ -29,25 +29,25 @@ table_names = ["customer", "lineitem", "nation", "orders", "part", "partsupp", "
 all_schemas = {}
 
 all_schemas["customer"] = [
-    ("C_CUSTKEY", pyarrow.int32()),
+    ("C_CUSTKEY", pyarrow.int64()),
     ("C_NAME", pyarrow.string()),
     ("C_ADDRESS", pyarrow.string()),
-    ("C_NATIONKEY", pyarrow.int32()),
+    ("C_NATIONKEY", pyarrow.int64()),
     ("C_PHONE", pyarrow.string()),
-    ("C_ACCTBAL", pyarrow.decimal128(15, 2)),
+    ("C_ACCTBAL", pyarrow.decimal128(11, 2)),
     ("C_MKTSEGMENT", pyarrow.string()),
     ("C_COMMENT", pyarrow.string()),
 ]
 
 all_schemas["lineitem"] = [
-    ("L_ORDERKEY", pyarrow.int32()),
-    ("L_PARTKEY", pyarrow.int32()),
-    ("L_SUPPKEY", pyarrow.int32()),
+    ("L_ORDERKEY", pyarrow.int64()),
+    ("L_PARTKEY", pyarrow.int64()),
+    ("L_SUPPKEY", pyarrow.int64()),
     ("L_LINENUMBER", pyarrow.int32()),
-    ("L_QUANTITY", pyarrow.decimal128(15, 2)),
-    ("L_EXTENDEDPRICE", pyarrow.decimal128(15, 2)),
-    ("L_DISCOUNT", pyarrow.decimal128(15, 2)),
-    ("L_TAX", pyarrow.decimal128(15, 2)),
+    ("L_QUANTITY", pyarrow.decimal128(11, 2)),
+    ("L_EXTENDEDPRICE", pyarrow.decimal128(11, 2)),
+    ("L_DISCOUNT", pyarrow.decimal128(11, 2)),
+    ("L_TAX", pyarrow.decimal128(11, 2)),
     ("L_RETURNFLAG", pyarrow.string()),
     ("L_LINESTATUS", pyarrow.string()),
     ("L_SHIPDATE", pyarrow.date32()),
@@ -59,17 +59,17 @@ all_schemas["lineitem"] = [
 ]
 
 all_schemas["nation"] = [
-    ("N_NATIONKEY", pyarrow.int32()),
+    ("N_NATIONKEY", pyarrow.int64()),
     ("N_NAME", pyarrow.string()),
-    ("N_REGIONKEY", pyarrow.int32()),
+    ("N_REGIONKEY", pyarrow.int64()),
     ("N_COMMENT", pyarrow.string()),
 ]
 
 all_schemas["orders"] = [
-    ("O_ORDERKEY", pyarrow.int32()),
-    ("O_CUSTKEY", pyarrow.int32()),
+    ("O_ORDERKEY", pyarrow.int64()),
+    ("O_CUSTKEY", pyarrow.int64()),
     ("O_ORDERSTATUS", pyarrow.string()),
-    ("O_TOTALPRICE", pyarrow.decimal128(15, 2)),
+    ("O_TOTALPRICE", pyarrow.decimal128(11, 2)),
     ("O_ORDERDATE", pyarrow.date32()),
     ("O_ORDERPRIORITY", pyarrow.string()),
     ("O_CLERK", pyarrow.string()),
@@ -78,38 +78,38 @@ all_schemas["orders"] = [
 ]
 
 all_schemas["part"] = [
-    ("P_PARTKEY", pyarrow.int32()),
+    ("P_PARTKEY", pyarrow.int64()),
     ("P_NAME", pyarrow.string()),
     ("P_MFGR", pyarrow.string()),
     ("P_BRAND", pyarrow.string()),
     ("P_TYPE", pyarrow.string()),
     ("P_SIZE", pyarrow.int32()),
     ("P_CONTAINER", pyarrow.string()),
-    ("P_RETAILPRICE", pyarrow.decimal128(15, 2)),
+    ("P_RETAILPRICE", pyarrow.decimal128(11, 2)),
     ("P_COMMENT", pyarrow.string()),
 ]
 
 all_schemas["partsupp"] = [
-    ("PS_PARTKEY", pyarrow.int32()),
-    ("PS_SUPPKEY", pyarrow.int32()),
+    ("PS_PARTKEY", pyarrow.int64()),
+    ("PS_SUPPKEY", pyarrow.int64()),
     ("PS_AVAILQTY", pyarrow.int32()),
-    ("PS_SUPPLYCOST", pyarrow.decimal128(15, 2)),
+    ("PS_SUPPLYCOST", pyarrow.decimal128(11, 2)),
     ("PS_COMMENT", pyarrow.string()),
 ]
 
 all_schemas["region"] = [
-    ("R_REGIONKEY", pyarrow.int32()),
+    ("R_REGIONKEY", pyarrow.int64()),
     ("R_NAME", pyarrow.string()),
     ("R_COMMENT", pyarrow.string()),
 ]
 
 all_schemas["supplier"] = [
-    ("S_SUPPKEY", pyarrow.int32()),
+    ("S_SUPPKEY", pyarrow.int64()),
     ("S_NAME", pyarrow.string()),
     ("S_ADDRESS", pyarrow.string()),
-    ("S_NATIONKEY", pyarrow.int32()),
+    ("S_NATIONKEY", pyarrow.int64()),
     ("S_PHONE", pyarrow.string()),
-    ("S_ACCTBAL", pyarrow.decimal128(15, 2)),
+    ("S_ACCTBAL", pyarrow.decimal128(11, 2)),
     ("S_COMMENT", pyarrow.string()),
 ]
 
@@ -126,14 +126,14 @@ def convert_tbl_to_parquet(ctx: SessionContext, table: str, tbl_filename: str, f
     print(f"Converting {tbl_filename} to {parquet_filename} ...")
 
     # schema manipulation code copied from DataFusion Python tpch example
-    table_schema = [(r[0].lower(), r[1]) for r in all_schemas[table]]
+    table_schema = [pyarrow.field(r[0].lower(), r[1], nullable=False) for r in all_schemas[table]]
 
     # Pre-collect the output columns so we can ignore the null field we add
     # in to handle the trailing | in the file
-    output_cols = [r[0] for r in table_schema]
+    output_cols = [r.name for r in table_schema]
 
     # Trailing | requires extra field for in processing
-    table_schema.append(("some_null", pyarrow.null()))
+    table_schema.append(pyarrow.field("some_null", pyarrow.null(), nullable=True))
 
     schema = pyarrow.schema(table_schema)
 
