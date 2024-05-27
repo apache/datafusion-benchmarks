@@ -146,14 +146,7 @@ def generate_tpch(scale_factor: int, partitions: int):
     if partitions == 1:
         command = f"docker run -v `pwd`/data:/data -t --rm ghcr.io/scalytics/tpch-docker:main -vf -s {scale_factor}"
         run_and_log_output(command, "/tmp/tpchgen.log")
-
-        # convert to parquet
-        ctx = SessionContext()
-        for table in table_names:
-            convert_tbl_to_parquet(ctx, table, f"data/{table}.tbl", "tbl", f"data/{table}.parquet")
-
     else:
-
         max_threads = os.cpu_count()
 
         # List of commands to run
@@ -174,8 +167,17 @@ def generate_tpch(scale_factor: int, partitions: int):
                 except Exception as e:
                     print(f"Command failed with exception: {e}")
 
+    end_time = time.time()
+    print(f"Generated CSV data in {round(end_time - start_time, 2)} seconds")
+
+def convert_tpch(scale_factor: int, partitions: int):
+    start_time = time.time()
+    ctx = SessionContext()
+    if partitions == 1:
         # convert to parquet
-        ctx = SessionContext()
+        for table in table_names:
+            convert_tbl_to_parquet(ctx, table, f"data/{table}.tbl", "tbl", f"data/{table}.parquet")
+    else:
         for table in table_names:
             run(f"mkdir -p data/{table}.parquet")
             if table == "nation" or table == "region":
@@ -184,13 +186,23 @@ def generate_tpch(scale_factor: int, partitions: int):
             else:
                 for part in range(1, partitions + 1):
                     convert_tbl_to_parquet(ctx, table, f"data/{table}.tbl.{part}", f"tbl.{part}", f"data/{table}.parquet/part{part}.parquet")
-
     end_time = time.time()
-    print(f"Finished in {round(end_time - start_time, 2)} seconds")
+    print(f"Converted CSV to Parquet in {round(end_time - start_time, 2)} seconds")
 
 if __name__ == '__main__':
     arg_parser = argparse.ArgumentParser()
-    arg_parser.add_argument('--scale-factor', type=int, help='The scale factor')
-    arg_parser.add_argument('--partitions', type=int, help='The number of partitions')
+    subparsers = arg_parser.add_subparsers(dest='command', help='Available commands')
+
+    parser_generate = subparsers.add_parser('generate', help='Generate TPC-H CSV Data')
+    parser_generate.add_argument('--scale-factor', type=int, help='The scale factor')
+    parser_generate.add_argument('--partitions', type=int, help='The number of partitions')
+
+    parser_convert = subparsers.add_parser('convert', help='Convert TPC-H CSV Data to Parquet')
+    parser_convert.add_argument('--scale-factor', type=int, help='The scale factor')
+    parser_convert.add_argument('--partitions', type=int, help='The number of partitions')
+
     args = arg_parser.parse_args()
-    generate_tpch(args.scale_factor, args.partitions)
+    if args.command == 'generate':
+        generate_tpch(args.scale_factor, args.partitions)
+    elif args.command == 'convert':
+        convert_tpch(args.scale_factor, args.partitions)
