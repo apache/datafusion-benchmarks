@@ -73,28 +73,29 @@ def generate_query_speedup_chart(baseline, comparison, label1: str, label2: str,
     plt.savefig('tpch_queries_speedup.png', format='png')
 
 
-def generate_query_comparison_chart(baseline, comparison, label1: str, label2: str, benchmark: str):
+def generate_query_comparison_chart(results, labels, benchmark: str):
     queries = []
-    a = []
-    b = []
+    benches = []
+    for _ in results:
+        benches.append([])
     for query in range(1, 23):
         queries.append("q" + str(query))
-        a.append(np.median(np.array(baseline[str(query)])))
-        b.append(np.median(np.array(comparison[str(query)])))
+        for i in range(0, len(results)):
+            benches[i].append(np.median(np.array(results[i][str(query)])))
 
     # Define the width of the bars
-    bar_width = 0.35
+    bar_width = 0.3
 
     # Define the positions of the bars on the x-axis
-    index = np.arange(len(queries))
+    index = np.arange(len(queries)) * 1.5
 
     # Create a bar chart
-    fig, ax = plt.subplots(figsize=(10, 6))
-    bar1 = ax.bar(index, a, bar_width, label=label1)
-    bar2 = ax.bar(index + bar_width, b, bar_width, label=label2)
+    fig, ax = plt.subplots(figsize=(15, 6))
+    for i in range(0, len(results)):
+        bar = ax.bar(index + i * bar_width, benches[i], bar_width, label=labels[i])
 
     # Add labels, title, and legend
-    ax.set_title(label1 + " vs " + label2 + " (" + benchmark + ")")
+    ax.set_title(benchmark)
     ax.set_xlabel('Queries')
     ax.set_ylabel('Query Time (seconds)')
     ax.set_xticks(index + bar_width / 2)
@@ -104,22 +105,23 @@ def generate_query_comparison_chart(baseline, comparison, label1: str, label2: s
     # Save the plot as an image file
     plt.savefig('tpch_queries_compare.png', format='png')
 
-def generate_summary(baseline, comparison, label1: str, label2: str, benchmark: str):
-    baseline_total = 0
-    comparison_total = 0
+def generate_summary(results, labels, benchmark: str):
+    timings = []
+    for _ in results:
+        timings.append(0)
+
     for query in range(1, 23):
-        baseline_total += np.median(np.array(baseline[str(query)]))
-        comparison_total += np.median(np.array(comparison[str(query)]))
+        for i in range(0, len(results)):
+            timings[i] += np.median(np.array(results[i][str(query)]))
 
     # Create figure and axis
     fig, ax = plt.subplots()
 
     # Add title and labels
-    ax.set_title(label1 + " vs " + label2 + " (" + benchmark + ")")
+    ax.set_title(benchmark)
     ax.set_ylabel('Time in seconds to run all 22 TPC-H queries (lower is better)')
 
-    labels = [label1, label2]
-    times = [round(baseline_total,0), round(comparison_total,0)]
+    times = [round(x,0) for x in timings]
 
     # Create bar chart
     bars = ax.bar(labels, times, color='skyblue')
@@ -131,21 +133,20 @@ def generate_summary(baseline, comparison, label1: str, label2: str, benchmark: 
 
     plt.savefig('tpch_allqueries.png', format='png')
 
-def main(filename1: str, filename2: str, label1: str, label2: str, benchmark: str):
-    with open(filename1) as f1:
-        baseline = json.load(f1)
-    with open(filename2) as f2:
-        comparison = json.load(f2)
-    generate_summary(baseline, comparison, label1, label2, benchmark)
-    generate_query_comparison_chart(baseline, comparison, label1, label2, benchmark)
-    generate_query_speedup_chart(baseline, comparison, label1, label2, benchmark)
+def main(files, labels, benchmark: str):
+    results = []
+    for filename in files:
+        with open(filename) as f:
+            results.append(json.load(f))
+    generate_summary(results, labels, benchmark)
+    generate_query_comparison_chart(results, labels, benchmark)
+    if len(files) == 2:
+        generate_query_speedup_chart(results[0], results[1], labels[0], labels[1], benchmark)
 
 if __name__ == '__main__':
     argparse = argparse.ArgumentParser(description='Generate comparison')
-    argparse.add_argument('filename1', type=str, help='First file')
-    argparse.add_argument('filename2', type=str, help='Second file')
-    argparse.add_argument('label1', type=str, help='First label')
-    argparse.add_argument('label2', type=str, help='Second label')
-    argparse.add_argument('benchmark', type=str, help='Benchmark description')
+    argparse.add_argument('filenames', nargs='+', type=str, help='JSON result files')
+    argparse.add_argument('--labels', nargs='+', type=str, help='Labels')
+    argparse.add_argument('--benchmark', type=str, help='Benchmark description')
     args = argparse.parse_args()
-    main(args.filename1, args.filename2, args.label1, args.label2, args.benchmark)
+    main(args.filenames, args.labels, args.benchmark)
