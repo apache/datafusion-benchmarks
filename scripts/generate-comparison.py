@@ -20,11 +20,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sys
 
+def geomean(data):
+    return np.prod(data) ** (1 / len(data))
+
 def generate_per_query_chart(baseline, comparison):
     results = []
     for query in range(1, 23):
-        a = np.mean(np.array(baseline[str(query)]))
-        b = np.mean(np.array(comparison[str(query)]))
+        a = np.median(np.array(baseline[str(query)]))
+        b = np.median(np.array(comparison[str(query)]))
         if a > b:
             speedup = a/b-1
         else:
@@ -45,11 +48,11 @@ def generate_per_query_chart(baseline, comparison):
     for bar, speedup in zip(bars, speedups):
         yval = bar.get_height()
         if yval >= 0:
-            ax.text(bar.get_x() + bar.get_width() / 2.0, yval, f'{yval}%', va='bottom', ha='center', fontsize=8,
-                    color='blue')
+            ax.text(bar.get_x() + bar.get_width() / 2.0, min(800, yval+20), f'{yval:.0f}%', va='bottom', ha='center', fontsize=8,
+                    color='blue', rotation=90)
         else:
-            ax.text(bar.get_x() + bar.get_width() / 2.0, yval, f'{yval}%', va='top', ha='center', fontsize=8,
-                    color='blue')
+            ax.text(bar.get_x() + bar.get_width() / 2.0, yval, f'{yval:.0f}%', va='top', ha='center', fontsize=8,
+                    color='blue', rotation=90)
 
     # Add title and labels
     ax.set_title('Comet Acceleration of TPC-H Queries')
@@ -58,28 +61,35 @@ def generate_per_query_chart(baseline, comparison):
 
     # Customize the y-axis to handle both positive and negative values better
     ax.axhline(0, color='black', linewidth=0.8)
-    ax.set_ylim(-400, 600)
+    min_value = (min(speedups) // 100) * 100
+    max_value = ((max(speedups) // 100) + 1) * 100
+    ax.set_ylim(min_value, max_value)
 
     # Show grid for better readability
     ax.yaxis.grid(True)
 
     # Save the plot as an image file
-    plt.savefig('comet_acceleration_tpch_queries.png', format='png')
+    plt.savefig('tpch_queries.png', format='png')
 
 
 def generate_summary(baseline, comparison):
     baseline_total = 0
     comparison_total = 0
     for query in range(1, 23):
-        baseline_total += np.mean(np.array(baseline[str(query)]))
-        comparison_total += np.mean(np.array(comparison[str(query)]))
+        baseline_total += np.median(np.array(baseline[str(query)]))
+        comparison_total += np.median(np.array(comparison[str(query)]))
+
+    # Create figure and axis
+    fig, ax = plt.subplots()
+
+    # Add title and labels
+    #TODO make title configurable
+    ax.set_title('TPC-H Performance (scale factor 100)')
+    ax.set_ylabel('Time in seconds to run all 22 TPC-H queries (lower is better)')
 
     # TODO make labels configurable
     labels = ['Spark', 'Spark + Comet']
     times = [round(baseline_total,0), round(comparison_total,0)]
-
-    # Create figure and axis
-    fig, ax = plt.subplots()
 
     # Create bar chart
     bars = ax.bar(labels, times, color='skyblue')
@@ -89,12 +99,7 @@ def generate_summary(baseline, comparison):
         yval = bar.get_height()
         ax.text(bar.get_x() + bar.get_width() / 2.0, yval, f'{yval}', va='bottom')  # va: vertical alignment
 
-    # Add title and labels
-    #TODO make title configurable
-    ax.set_title('TPC-H Performance (scale factor 100)')
-    ax.set_ylabel('Time in seconds to run all 22 TPC-H queries (lower is better)')
-
-    plt.savefig('tpch_performance.png', format='png')
+    plt.savefig('tpch_allqueries.png', format='png')
 
 def main(filename1: str, filename2: str):
     with open(filename1) as f1:
