@@ -15,6 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
+import argparse
 import json
 import matplotlib.pyplot as plt
 import numpy as np
@@ -23,7 +24,7 @@ import sys
 def geomean(data):
     return np.prod(data) ** (1 / len(data))
 
-def generate_query_speedup_chart(baseline, comparison):
+def generate_query_speedup_chart(baseline, comparison, label1: str, label2: str, benchmark: str):
     results = []
     for query in range(1, 23):
         a = np.median(np.array(baseline[str(query)]))
@@ -48,21 +49,21 @@ def generate_query_speedup_chart(baseline, comparison):
     for bar, speedup in zip(bars, speedups):
         yval = bar.get_height()
         if yval >= 0:
-            ax.text(bar.get_x() + bar.get_width() / 2.0, min(800, yval+20), f'{yval:.0f}%', va='bottom', ha='center', fontsize=8,
+            ax.text(bar.get_x() + bar.get_width() / 2.0, min(800, yval+5), f'{yval:.0f}%', va='bottom', ha='center', fontsize=8,
                     color='blue', rotation=90)
         else:
             ax.text(bar.get_x() + bar.get_width() / 2.0, yval, f'{yval:.0f}%', va='top', ha='center', fontsize=8,
                     color='blue', rotation=90)
 
     # Add title and labels
-    ax.set_title('Comet Acceleration of TPC-H Queries')
+    ax.set_title(label2 + " speedup over " + label1 + " (" + benchmark + ")")
     ax.set_ylabel('Speedup (100% speedup = 2x faster)')
     ax.set_xlabel('Query')
 
     # Customize the y-axis to handle both positive and negative values better
     ax.axhline(0, color='black', linewidth=0.8)
     min_value = (min(speedups) // 100) * 100
-    max_value = ((max(speedups) // 100) + 1) * 100
+    max_value = ((max(speedups) // 100) + 1) * 100 + 50
     ax.set_ylim(min_value, max_value)
 
     # Show grid for better readability
@@ -72,7 +73,7 @@ def generate_query_speedup_chart(baseline, comparison):
     plt.savefig('tpch_queries_speedup.png', format='png')
 
 
-def generate_query_comparison_chart(baseline, comparison):
+def generate_query_comparison_chart(baseline, comparison, label1: str, label2: str, benchmark: str):
     queries = []
     a = []
     b = []
@@ -89,13 +90,13 @@ def generate_query_comparison_chart(baseline, comparison):
 
     # Create a bar chart
     fig, ax = plt.subplots(figsize=(10, 6))
-    bar1 = ax.bar(index, a, bar_width, label='Spark')
-    bar2 = ax.bar(index + bar_width, b, bar_width, label='Spark + Comet')
+    bar1 = ax.bar(index, a, bar_width, label=label1)
+    bar2 = ax.bar(index + bar_width, b, bar_width, label=label2)
 
     # Add labels, title, and legend
+    ax.set_title(label1 + " vs " + label2 + " (" + benchmark + ")")
     ax.set_xlabel('Queries')
-    ax.set_ylabel('Run Time')
-    ax.set_title('TPC-H Queries')
+    ax.set_ylabel('Query Time (seconds)')
     ax.set_xticks(index + bar_width / 2)
     ax.set_xticklabels(queries)
     ax.legend()
@@ -103,7 +104,7 @@ def generate_query_comparison_chart(baseline, comparison):
     # Save the plot as an image file
     plt.savefig('tpch_queries_compare.png', format='png')
 
-def generate_summary(baseline, comparison):
+def generate_summary(baseline, comparison, label1: str, label2: str, benchmark: str):
     baseline_total = 0
     comparison_total = 0
     for query in range(1, 23):
@@ -114,12 +115,10 @@ def generate_summary(baseline, comparison):
     fig, ax = plt.subplots()
 
     # Add title and labels
-    #TODO make title configurable
-    ax.set_title('TPC-H Performance (scale factor 100)')
+    ax.set_title(label1 + " vs " + label2 + " (" + benchmark + ")")
     ax.set_ylabel('Time in seconds to run all 22 TPC-H queries (lower is better)')
 
-    # TODO make labels configurable
-    labels = ['Spark', 'Spark + Comet']
+    labels = [label1, label2]
     times = [round(baseline_total,0), round(comparison_total,0)]
 
     # Create bar chart
@@ -132,15 +131,21 @@ def generate_summary(baseline, comparison):
 
     plt.savefig('tpch_allqueries.png', format='png')
 
-def main(filename1: str, filename2: str):
+def main(filename1: str, filename2: str, label1: str, label2: str, benchmark: str):
     with open(filename1) as f1:
         baseline = json.load(f1)
     with open(filename2) as f2:
         comparison = json.load(f2)
-    generate_summary(baseline, comparison)
-    generate_query_comparison_chart(baseline, comparison)
-    generate_query_speedup_chart(baseline, comparison)
+    generate_summary(baseline, comparison, label1, label2, benchmark)
+    generate_query_comparison_chart(baseline, comparison, label1, label2, benchmark)
+    generate_query_speedup_chart(baseline, comparison, label1, label2, benchmark)
 
 if __name__ == '__main__':
-    # TODO argparse
-    main(sys.argv[1], sys.argv[2])
+    argparse = argparse.ArgumentParser(description='Generate comparison')
+    argparse.add_argument('filename1', type=str, help='First file')
+    argparse.add_argument('filename2', type=str, help='Second file')
+    argparse.add_argument('label1', type=str, help='First label')
+    argparse.add_argument('label2', type=str, help='Second label')
+    argparse.add_argument('benchmark', type=str, help='Benchmark description')
+    args = argparse.parse_args()
+    main(args.filename1, args.filename2, args.label1, args.label2, args.benchmark)
