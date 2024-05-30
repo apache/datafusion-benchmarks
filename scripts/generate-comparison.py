@@ -23,7 +23,7 @@ import sys
 def geomean(data):
     return np.prod(data) ** (1 / len(data))
 
-def generate_per_query_chart(baseline, comparison):
+def generate_query_speedup_chart(baseline, comparison):
     results = []
     for query in range(1, 23):
         a = np.median(np.array(baseline[str(query)]))
@@ -69,8 +69,39 @@ def generate_per_query_chart(baseline, comparison):
     ax.yaxis.grid(True)
 
     # Save the plot as an image file
-    plt.savefig('tpch_queries.png', format='png')
+    plt.savefig('tpch_queries_speedup.png', format='png')
 
+
+def generate_query_comparison_chart(baseline, comparison):
+    queries = []
+    a = []
+    b = []
+    for query in range(1, 23):
+        queries.append("q" + str(query))
+        a.append(np.median(np.array(baseline[str(query)])))
+        b.append(np.median(np.array(comparison[str(query)])))
+
+    # Define the width of the bars
+    bar_width = 0.35
+
+    # Define the positions of the bars on the x-axis
+    index = np.arange(len(queries))
+
+    # Create a bar chart
+    fig, ax = plt.subplots(figsize=(10, 6))
+    bar1 = ax.bar(index, a, bar_width, label='Spark')
+    bar2 = ax.bar(index + bar_width, b, bar_width, label='Spark + Comet')
+
+    # Add labels, title, and legend
+    ax.set_xlabel('Queries')
+    ax.set_ylabel('Run Time')
+    ax.set_title('TPC-H Queries')
+    ax.set_xticks(index + bar_width / 2)
+    ax.set_xticklabels(queries)
+    ax.legend()
+
+    # Save the plot as an image file
+    plt.savefig('tpch_queries_compare.png', format='png')
 
 def generate_summary(baseline, comparison):
     baseline_total = 0
@@ -107,7 +138,8 @@ def main(filename1: str, filename2: str):
     with open(filename2) as f2:
         comparison = json.load(f2)
     generate_summary(baseline, comparison)
-    generate_per_query_chart(baseline, comparison)
+    generate_query_comparison_chart(baseline, comparison)
+    generate_query_speedup_chart(baseline, comparison)
 
 if __name__ == '__main__':
     # TODO argparse
