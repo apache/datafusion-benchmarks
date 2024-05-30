@@ -38,10 +38,13 @@ Data can be generated as a single Parquet file per table by specifying `--partit
 Data will be generated into a `data` directory in the current working directory.
 
 ```shell
-python tpchgen.py --scale-factor 1 --partitions 1
+python tpchgen.py generate --scale-factor 1 --partitions 1
+python tpchgen.py convert --scale-factor 1 --partitions 1
 ```
+
 Data can be generated as multiple Parquet files per table by specifying `--partitions` greater than one. 
 
 ```shell
-python tpchgen.py --scale-factor 1000 --partitions 64
+python tpchgen.py generate --scale-factor 1000 --partitions 64
+python tpchgen.py convert --scale-factor 1000 --partitions 64
 ```
