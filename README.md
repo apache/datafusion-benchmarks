@@ -48,17 +48,12 @@ prohibited by the TPC.
 
 ## Data Generation
 
-See the benchmark-specific instructions for generating the CSV data for [TPC-H](tpch) and [TPC-DS](tpcds).
-
-## Converting CSV data to Parquet
-
-Although it is valid to run benchmarks against CSV data, this does not really represent how most of the world is
-running OLAP queries, especially when dealing with large datasets. When benchmarking DataFusion, we typically want
-to be querying Parquet data, so first we must convert the generated datasets to Parquet. Also, we typically do not
-want a single file per table, so we also need to repartition the data.
-
-We plan on adding Python scripts in this repository to perform this conversion and repartitioning. Until then you may
-want to write your own scripts using DataFusion or Spark. Another option is to use [tpc-tools](https://crates.io/crates/tpctools).
+See the benchmark-specific instructions for generating the CSV data for [TPC-H](tpch) and [TPC-DS](tpcds) and for 
+converting that data to Parquet format. Although it is valid to run benchmarks against CSV data, this does not really 
+represent how most of the world is running OLAP queries, especially when dealing with large datasets. When benchmarking 
+DataFusion and its subprojects, we typically want to be querying Parquet data. Also, we typically do not
+want a single file per table, so we also need to repartition the data. The provided scripts take care of this conversion 
+and repartitioning.
 
 ## Running the Benchmarks with DataFusion
 
@@ -67,10 +62,20 @@ Scripts are available for the following DataFusion projects:
 - [DataFusion Python](./runners/datafusion-python)
 - [DataFusion Comet](./runners/datafusion-comet)
 
+These benchmarking scripts produce JSON files containing query timings.
+
 ## Comparing Results
 
-Coming soon. The plan is to add some Python scripts for comparing results from different runs and producing charts
-that we can use in blog posts.
+The Python script [scripts/generate-comparison.py](scripts/generate-comparison.py) can be used to produce charts 
+comparing results from different benchmark runs.
+
+For example:
+
+```shell
+python scripts/generate-comparison.py file1.json file2.json --labels "Spark" "Comet" --benchmark "TPC-H 100GB"
+```
+
+This will create image files in the current directory in PNG format.
 
 ## Legal Notices
 
