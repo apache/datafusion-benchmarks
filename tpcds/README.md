@@ -46,7 +46,7 @@ docker build -t datafusion-benchmarks/tpcdsgen .
 Run the Docker container in interactive mode.
 
 ```shell
-docker run -it -v `pwd`:/data datafusion-benchmarks/tpcdsgen
+docker run -it -v `pwd`/data:/data datafusion-benchmarks/tpcdsgen
 ```
 
 Run the script to generate CSV data.

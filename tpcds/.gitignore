@@ -1,3 +1,4 @@
 tpc-ds-tool.zip
-data/*.dat
+*.dat
+*.parquet
 venv
