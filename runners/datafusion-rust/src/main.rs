@@ -51,7 +51,7 @@ struct Opt {
     #[structopt(short, long)]
     exclude: Vec<u8>,
 
-    /// Concurrency
+    /// Concurrency, determining the number of partitions for queries
     #[structopt(short, long)]
     concurrency: u8,
 
