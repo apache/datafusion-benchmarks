@@ -59,8 +59,10 @@ and repartitioning.
 
 Scripts are available for the following DataFusion projects:
 
-- [DataFusion Python](./runners/datafusion-python)
+- [DataFusion](./runners/datafusion-rust)
+- [DataFusion Ballista](./runners/datafusion-ballista)
 - [DataFusion Comet](./runners/datafusion-comet)
+- [DataFusion Python](./runners/datafusion-python)
 
 These benchmarking scripts produce JSON files containing query timings.
 
