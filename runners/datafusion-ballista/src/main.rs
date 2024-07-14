@@ -1,6 +1,4 @@
 use ballista::prelude::*;
-use datafusion::dataframe::DataFrameWriteOptions;
-use datafusion::datasource::{MemTable, TableProvider};
 use datafusion::prelude::ParquetReadOptions;
 use serde::Serialize;
 use std::collections::HashMap;
@@ -8,7 +6,6 @@ use std::fs;
 use std::fs::File;
 use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 use structopt::StructOpt;
 use tokio::time::Instant;

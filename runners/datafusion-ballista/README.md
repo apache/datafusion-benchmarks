@@ -1,4 +1,4 @@
-# SQLBench Ballista Runner
+# DataFusion Benchmarks: Ballista Runner
 
 ## Build
 
@@ -9,10 +9,10 @@ cargo build --release
 ## Run Single Query
 
 ```bash
-./target/release/sqlbench-ballista \
-  --concurrency 24 \
-  --data-path /mnt/bigdata/tpch/sf10-parquet/ \
-  --query-path ~/git/sql-benchmarks/sqlbench-h/queries/sf\=10/ \
+./target/release/ballista-tpcbench \
+  --concurrency 8 \
+  --data-path /mnt/bigdata/tpch/sf100/ \
+  --query-path ../../tpch/queries/ \
   --iterations 1 \
   --output . \
   --query 16
@@ -21,10 +21,10 @@ cargo build --release
 ## Run All Queries
 
 ```bash
-./target/release/sqlbench-ballista \
-  --concurrency 24 \
-  --data-path /mnt/bigdata/tpch/sf10-parquet/ \
-  --query-path ~/git/sql-benchmarks/sqlbench-h/queries/sf\=10/ \
+./target/release/ballista-tpcbench \
+  --concurrency 8 \
+  --data-path /mnt/bigdata/tpch/sf100/ \
+  --query-path ../../tpch/queries/ \
   --iterations 1 \
   --output . \
   --num-queries 22

@@ -558,6 +558,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "ballista-tpcbench"
+version = "0.1.0"
+dependencies = [
+ "arrow",
+ "ballista",
+ "datafusion",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "structopt",
+ "tokio",
+]
+
+[[package]]
 name = "base64"
 version = "0.21.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -937,20 +951,6 @@ dependencies = [
  "uuid",
  "xz2",
  "zstd",
-]
-
-[[package]]
-name = "datafusion-ballista-tpcbench"
-version = "0.1.0"
-dependencies = [
- "arrow",
- "ballista",
- "datafusion",
- "serde",
- "serde_json",
- "serde_yaml",
- "structopt",
- "tokio",
 ]
 
 [[package]]
