@@ -97,7 +97,11 @@ def generate_query_comparison_chart(results, labels, benchmark: str, title: str)
     index = np.arange(len(queries)) * 1.5
 
     # Create a bar chart
-    fig, ax = plt.subplots(figsize=(15, 6))
+    if benchmark == "tpch":
+        fig, ax = plt.subplots(figsize=(15, 6))
+    else:
+        fig, ax = plt.subplots(figsize=(35, 6))
+
     for i in range(0, len(results)):
         bar = ax.bar(index + i * bar_width, benches[i], bar_width, label=labels[i])
 
