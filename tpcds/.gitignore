@@ -1,0 +1,4 @@
+tpc-ds-tool.zip
+*.dat
+*.parquet
+venv

@@ -64,7 +64,11 @@ def main(benchmark: str, data_path: str, query_path: str, iterations: int):
             spark.sparkContext.setJobDescription(f"TPC-H q{query}")
 
             # read text file
-            path = f"{query_path}/q{query}.sql"
+            if query == 72:
+                # use version with sensible join order
+                path = f"{query_path}/q{query}_optimized.sql"
+            else:
+                path = f"{query_path}/q{query}.sql"
             print(f"Reading query {query} using path {path}")
             with open(path, "r") as f:
                 text = f.read()

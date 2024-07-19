@@ -1,0 +1,4 @@
+datafusion
+pyarrow
+numpy
+matplotlib
