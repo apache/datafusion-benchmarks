@@ -19,14 +19,13 @@ import argparse
 import json
 import matplotlib.pyplot as plt
 import numpy as np
-import sys
 
 def geomean(data):
     return np.prod(data) ** (1 / len(data))
 
-def generate_query_speedup_chart(baseline, comparison, label1: str, label2: str, benchmark: str):
+def generate_query_speedup_chart(baseline, comparison, label1: str, label2: str, benchmark: str, title: str):
     results = []
-    for query in range(1, 23):
+    for query in range(1, query_count(benchmark)+1):
         a = np.median(np.array(baseline[str(query)]))
         b = np.median(np.array(comparison[str(query)]))
         if a > b:
@@ -40,7 +39,11 @@ def generate_query_speedup_chart(baseline, comparison, label1: str, label2: str,
     queries, speedups = zip(*results)
 
     # Create figure and axis
-    fig, ax = plt.subplots(figsize=(10, 6))
+    if benchmark == "tpch":
+        fig, ax = plt.subplots(figsize=(10, 6))
+    else:
+        # TODO improve this
+        fig, ax = plt.subplots(figsize=(35, 10))
 
     # Create bar chart
     bars = ax.bar(queries, speedups, color='skyblue')
@@ -56,7 +59,7 @@ def generate_query_speedup_chart(baseline, comparison, label1: str, label2: str,
                     color='blue', rotation=90)
 
     # Add title and labels
-    ax.set_title(label2 + " speedup over " + label1 + " (" + benchmark + ")")
+    ax.set_title(label2 + " speedup over " + label1 + " (" + title + ")")
     ax.set_ylabel('Speedup (100% speedup = 2x faster)')
     ax.set_xlabel('Query')
 
@@ -64,21 +67,25 @@ def generate_query_speedup_chart(baseline, comparison, label1: str, label2: str,
     ax.axhline(0, color='black', linewidth=0.8)
     min_value = (min(speedups) // 100) * 100
     max_value = ((max(speedups) // 100) + 1) * 100 + 50
-    ax.set_ylim(min_value, max_value)
+    if benchmark == "tpch":
+        ax.set_ylim(min_value, max_value)
+    else:
+        # TODO improve this
+        ax.set_ylim(-250, 300)
 
     # Show grid for better readability
     ax.yaxis.grid(True)
 
     # Save the plot as an image file
-    plt.savefig('tpch_queries_speedup.png', format='png')
+    plt.savefig(f'{benchmark}_queries_speedup.png', format='png')
 
 
-def generate_query_comparison_chart(results, labels, benchmark: str):
+def generate_query_comparison_chart(results, labels, benchmark: str, title: str):
     queries = []
     benches = []
     for _ in results:
         benches.append([])
-    for query in range(1, 23):
+    for query in range(1, query_count(benchmark)+1):
         queries.append("q" + str(query))
         for i in range(0, len(results)):
             benches[i].append(np.median(np.array(results[i][str(query)])))
@@ -95,7 +102,7 @@ def generate_query_comparison_chart(results, labels, benchmark: str):
         bar = ax.bar(index + i * bar_width, benches[i], bar_width, label=labels[i])
 
     # Add labels, title, and legend
-    ax.set_title(benchmark)
+    ax.set_title(title)
     ax.set_xlabel('Queries')
     ax.set_ylabel('Query Time (seconds)')
     ax.set_xticks(index + bar_width / 2)
@@ -103,14 +110,15 @@ def generate_query_comparison_chart(results, labels, benchmark: str):
     ax.legend()
 
     # Save the plot as an image file
-    plt.savefig('tpch_queries_compare.png', format='png')
+    plt.savefig(f'{benchmark}_queries_compare.png', format='png')
 
-def generate_summary(results, labels, benchmark: str):
+def generate_summary(results, labels, benchmark: str, title: str):
     timings = []
     for _ in results:
         timings.append(0)
 
-    for query in range(1, 23):
+    num_queries = query_count(benchmark)
+    for query in range(1, num_queries + 1):
         for i in range(0, len(results)):
             timings[i] += np.median(np.array(results[i][str(query)]))
 
@@ -118,8 +126,8 @@ def generate_summary(results, labels, benchmark: str):
     fig, ax = plt.subplots()
 
     # Add title and labels
-    ax.set_title(benchmark)
-    ax.set_ylabel('Time in seconds to run all 22 TPC-H queries (lower is better)')
+    ax.set_title(title)
+    ax.set_ylabel(f'Time in seconds to run all {num_queries} {benchmark} queries (lower is better)')
 
     times = [round(x,0) for x in timings]
 
@@ -131,22 +139,31 @@ def generate_summary(results, labels, benchmark: str):
         yval = bar.get_height()
         ax.text(bar.get_x() + bar.get_width() / 2.0, yval, f'{yval}', va='bottom')  # va: vertical alignment
 
-    plt.savefig('tpch_allqueries.png', format='png')
+    plt.savefig(f'{benchmark}_allqueries.png', format='png')
 
-def main(files, labels, benchmark: str):
+def query_count(benchmark: str):
+    if benchmark == "tpch":
+        return 22
+    elif benchmark == "tpcds":
+        return 99
+    else:
+        raise "invalid benchmark name"
+
+def main(files, labels, benchmark: str, title: str):
     results = []
     for filename in files:
         with open(filename) as f:
             results.append(json.load(f))
-    generate_summary(results, labels, benchmark)
-    generate_query_comparison_chart(results, labels, benchmark)
+    generate_summary(results, labels, benchmark, title)
+    generate_query_comparison_chart(results, labels, benchmark, title)
     if len(files) == 2:
-        generate_query_speedup_chart(results[0], results[1], labels[0], labels[1], benchmark)
+        generate_query_speedup_chart(results[0], results[1], labels[0], labels[1], benchmark, title)
 
 if __name__ == '__main__':
     argparse = argparse.ArgumentParser(description='Generate comparison')
     argparse.add_argument('filenames', nargs='+', type=str, help='JSON result files')
     argparse.add_argument('--labels', nargs='+', type=str, help='Labels')
-    argparse.add_argument('--benchmark', type=str, help='Benchmark description')
+    argparse.add_argument('--benchmark', type=str, help='Benchmark name (tpch or tpcds)')
+    argparse.add_argument('--title', type=str, help='Chart title')
     args = argparse.parse_args()
-    main(args.filenames, args.labels, args.benchmark)
+    main(args.filenames, args.labels, args.benchmark, args.title)
