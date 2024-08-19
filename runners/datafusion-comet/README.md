@@ -23,7 +23,7 @@ Follow the [Comet Installation](https://datafusion.apache.org/comet/user-guide/i
 create a Comet JAR file and then set the `COMET_JAR` environment variable to point to that jar file.
 
 ```shell
-export COMET_JAR=spark/target/comet-spark-spark3.4_2.12-0.1.0-SNAPSHOT.jar
+export COMET_JAR=spark/target/comet-spark-spark3.4_2.12-0.2.0-SNAPSHOT.jar
 ```
 
 Set up `SPARK_HOME` to point to the relevant Spark version and use `spark-submit` to run the benchmark script.
@@ -41,14 +41,21 @@ $SPARK_HOME/bin/spark-submit \
     --conf spark.driver.extraClassPath=$COMET_JAR \
     --conf spark.executor.extraClassPath=$COMET_JAR \
     --conf spark.sql.extensions=org.apache.comet.CometSparkSessionExtensions \
+    --jars $COMET_JAR \
+    --conf spark.driver.extraClassPath=$COMET_JAR \
+    --conf spark.executor.extraClassPath=$COMET_JAR \
+    --conf spark.sql.extensions=org.apache.comet.CometSparkSessionExtensions \
     --conf spark.comet.enabled=true \
     --conf spark.comet.exec.enabled=true \
-    --conf spark.comet.exec.all.enabled=true \
-    --conf spark.comet.explainFallback.enabled=true \
+    --conf spark.comet.cast.allowIncompatible=true \
+    --conf spark.comet.exec.shuffle.enabled=true \
+    --conf spark.comet.exec.shuffle.mode=auto \
+    --conf spark.shuffle.manager=org.apache.spark.sql.comet.execution.shuffle.CometShuffleManager \
     tpcbench.py \
     --benchmark tpch \
     --data /path/to/parquet-data \
-    --queries ../../tpch/queries/
+    --queries ../../tpch/queries/ \
+    --output .
 ```
 
 When benchmarking Comet, we are generally interested in comparing the performance of Spark with Comet disabled to
