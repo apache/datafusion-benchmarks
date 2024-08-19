@@ -49,13 +49,31 @@ Run the Docker container in interactive mode.
 docker run -it -v `pwd`/data:/data datafusion-benchmarks/tpcdsgen
 ```
 
-Run the script to generate CSV data.
+Use tpctools to generate the data
 
 ```shell
-./gen.sh
+tpctools generate --benchmark tpcds \
+  --scale 100 \
+  --partitions 12 \
+  --generator-path /DSGen-software-code-3.2.0rc1/tools \
+  --output /data
+```
+
+Exit the container
+
+```shell
+exit
 ```
 
 ## Convert the CSV data to Parquet
 
-TBD
+Use tpcdsgen.py to convert the data
+
+Paths are hard-coded in the script
+
+Do not run in container
+
+```shell
+python3 tpcdsgen.py convert --scale-factor 100 --partitions 12
+```
 
