@@ -110,4 +110,4 @@ if __name__ == "__main__":
     parser.add_argument("--output", required=True, help="Path to write output")
     args = parser.parse_args()
 
-    main(args.benchmark, args.data, args.queries, int(args.iterations). args.output)
+    main(args.benchmark, args.data, args.queries, int(args.iterations), args.output)
