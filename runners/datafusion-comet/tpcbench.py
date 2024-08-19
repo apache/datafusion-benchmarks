@@ -61,7 +61,7 @@ def main(benchmark: str, data_path: str, query_path: str, iterations: int):
         print(f"Starting iteration {iteration} of {iterations}")
 
         for query in range(1, num_queries+1):
-            spark.sparkContext.setJobDescription(f"TPC-H q{query}")
+            spark.sparkContext.setJobDescription(f"{benchmark} q{query}")
 
             # read text file
             if query == 72:
