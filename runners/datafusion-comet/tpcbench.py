@@ -21,7 +21,7 @@ import json
 from pyspark.sql import SparkSession
 import time
 
-def main(benchmark: str, data_path: str, query_path: str, iterations: int):
+def main(benchmark: str, data_path: str, query_path: str, iterations: int, output: str):
 
     # Initialize a SparkSession
     spark = SparkSession.builder \
@@ -61,10 +61,14 @@ def main(benchmark: str, data_path: str, query_path: str, iterations: int):
         print(f"Starting iteration {iteration} of {iterations}")
 
         for query in range(1, num_queries+1):
-            spark.sparkContext.setJobDescription(f"TPC-H q{query}")
+            spark.sparkContext.setJobDescription(f"{benchmark} q{query}")
 
             # read text file
-            path = f"{query_path}/q{query}.sql"
+            if query == 72:
+                # use version with sensible join order
+                path = f"{query_path}/q{query}_optimized.sql"
+            else:
+                path = f"{query_path}/q{query}.sql"
             print(f"Reading query {query} using path {path}")
             with open(path, "r") as f:
                 text = f.read()
@@ -89,7 +93,7 @@ def main(benchmark: str, data_path: str, query_path: str, iterations: int):
 
     str = json.dumps(results, indent=4)
     current_time_millis = int(datetime.now().timestamp() * 1000)
-    results_path = f"spark-{benchmark}-{current_time_millis}.json"
+    results_path = f"{output}/spark-{benchmark}-{current_time_millis}.json"
     print(f"Writing results to {results_path}")
     with open(results_path, "w") as f:
         f.write(str)
@@ -103,6 +107,7 @@ if __name__ == "__main__":
     parser.add_argument("--data", required=True, help="Path to data files")
     parser.add_argument("--queries", required=True, help="Path to query files")
     parser.add_argument("--iterations", required=False, default="1", help="How many iterations to run")
+    parser.add_argument("--output", required=True, help="Path to write output")
     args = parser.parse_args()
 
-    main(args.benchmark, args.data, args.queries, int(args.iterations))
+    main(args.benchmark, args.data, args.queries, int(args.iterations), args.output)
