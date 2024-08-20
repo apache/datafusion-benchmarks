@@ -40,7 +40,6 @@ $SPARK_HOME/bin/spark-submit \
     --jars $COMET_JAR \
     --conf spark.driver.extraClassPath=$COMET_JAR \
     --conf spark.executor.extraClassPath=$COMET_JAR \
-    --jars $COMET_JAR \
     --conf spark.plugins=org.apache.spark.CometPlugin \
     --conf spark.sql.extensions=org.apache.comet.CometSparkSessionExtensions \
     --conf spark.comet.enabled=true \
