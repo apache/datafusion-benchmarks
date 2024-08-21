@@ -23,7 +23,7 @@ import numpy as np
 def geomean(data):
     return np.prod(data) ** (1 / len(data))
 
-def generate_query_speedup_chart(baseline, comparison, label1: str, label2: str, benchmark: str, title: str):
+def generate_query_rel_speedup_chart(baseline, comparison, label1: str, label2: str, benchmark: str, title: str):
     results = []
     for query in range(1, query_count(benchmark)+1):
         a = np.median(np.array(baseline[str(query)]))
@@ -59,7 +59,7 @@ def generate_query_speedup_chart(baseline, comparison, label1: str, label2: str,
 
     # Add title and labels
     ax.set_title(label2 + " speedup over " + label1 + " (" + title + ")")
-    ax.set_ylabel('Speedup (100% speedup = 2x faster)')
+    ax.set_ylabel('Speedup Percentage (100% speedup = 2x faster)')
     ax.set_xlabel('Query')
 
     # Customize the y-axis to handle both positive and negative values better
@@ -76,8 +76,55 @@ def generate_query_speedup_chart(baseline, comparison, label1: str, label2: str,
     ax.yaxis.grid(True)
 
     # Save the plot as an image file
-    plt.savefig(f'{benchmark}_queries_speedup.png', format='png')
+    plt.savefig(f'{benchmark}_queries_speedup_rel.png', format='png')
 
+def generate_query_abs_speedup_chart(baseline, comparison, label1: str, label2: str, benchmark: str, title: str):
+    results = []
+    for query in range(1, query_count(benchmark)+1):
+        a = np.median(np.array(baseline[str(query)]))
+        b = np.median(np.array(comparison[str(query)]))
+        speedup = a-b
+        results.append(("q" + str(query), round(speedup, 1)))
+
+    results = sorted(results, key=lambda x: -x[1])
+
+    queries, speedups = zip(*results)
+
+    # Create figure and axis
+    if benchmark == "tpch":
+        fig, ax = plt.subplots(figsize=(10, 6))
+    else:
+        fig, ax = plt.subplots(figsize=(35, 10))
+
+    # Create bar chart
+    bars = ax.bar(queries, speedups, color='skyblue')
+
+    # Add text annotations
+    for bar, speedup in zip(bars, speedups):
+        yval = bar.get_height()
+        if yval >= 0:
+            ax.text(bar.get_x() + bar.get_width() / 2.0, min(800, yval+5), f'{yval:.1f}', va='bottom', ha='center', fontsize=8,
+                    color='blue', rotation=90)
+        else:
+            ax.text(bar.get_x() + bar.get_width() / 2.0, yval, f'{yval:.1f}', va='top', ha='center', fontsize=8,
+                    color='blue', rotation=90)
+
+    # Add title and labels
+    ax.set_title(label2 + " speedup over " + label1 + " (" + title + ")")
+    ax.set_ylabel('Speedup (in seconds)')
+    ax.set_xlabel('Query')
+
+    # Customize the y-axis to handle both positive and negative values better
+    ax.axhline(0, color='black', linewidth=0.8)
+    min_value = min(speedups) * 2
+    max_value = max(speedups) * 2
+    ax.set_ylim(min_value, max_value)
+
+    # Show grid for better readability
+    ax.yaxis.grid(True)
+
+    # Save the plot as an image file
+    plt.savefig(f'{benchmark}_queries_speedup_abs.png', format='png')
 
 def generate_query_comparison_chart(results, labels, benchmark: str, title: str):
     queries = []
@@ -160,7 +207,8 @@ def main(files, labels, benchmark: str, title: str):
     generate_summary(results, labels, benchmark, title)
     generate_query_comparison_chart(results, labels, benchmark, title)
     if len(files) == 2:
-        generate_query_speedup_chart(results[0], results[1], labels[0], labels[1], benchmark, title)
+        generate_query_abs_speedup_chart(results[0], results[1], labels[0], labels[1], benchmark, title)
+        generate_query_rel_speedup_chart(results[0], results[1], labels[0], labels[1], benchmark, title)
 
 if __name__ == '__main__':
     argparse = argparse.ArgumentParser(description='Generate comparison')
