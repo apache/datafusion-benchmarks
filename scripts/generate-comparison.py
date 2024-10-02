@@ -42,7 +42,6 @@ def generate_query_speedup_chart(baseline, comparison, label1: str, label2: str,
     if benchmark == "tpch":
         fig, ax = plt.subplots(figsize=(10, 6))
     else:
-        # TODO improve this
         fig, ax = plt.subplots(figsize=(35, 10))
 
     # Create bar chart
