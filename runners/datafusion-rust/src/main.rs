@@ -24,7 +24,7 @@ struct Opt {
     debug: bool,
 
     /// Optional path to config file
-    #[structopt(short, long, parse(from_os_str))]
+    #[structopt(long, parse(from_os_str))]
     config_path: Option<PathBuf>,
 
     /// Path to queries
@@ -157,7 +157,7 @@ pub async fn main() -> Result<()> {
                 opt.iterations,
                 &mut results,
             )
-                .await?;
+            .await?;
         }
         _ => {
             let num_queries = opt.num_queries.unwrap();
@@ -176,7 +176,7 @@ pub async fn main() -> Result<()> {
                     opt.iterations,
                     &mut results,
                 )
-                    .await;
+                .await;
                 match result {
                     Ok(_) => {}
                     Err(e) => println!("Fail: {}", e),
