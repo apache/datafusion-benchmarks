@@ -1,17 +1,11 @@
-use datafusion::common::Result;
-use datafusion::dataframe::DataFrameWriteOptions;
-use datafusion::datasource::MemTable;
-use datafusion::physical_plan::displayable;
-use datafusion::prelude::{ParquetReadOptions, SessionConfig, SessionContext};
-use datafusion::scalar::ScalarValue;
-use datafusion::DATAFUSION_VERSION;
+use ballista::prelude::*;
+use datafusion::prelude::ParquetReadOptions;
 use serde::Serialize;
 use std::collections::HashMap;
 use std::fs;
 use std::fs::File;
 use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 use structopt::StructOpt;
 use tokio::time::Instant;
@@ -24,7 +18,7 @@ struct Opt {
     debug: bool,
 
     /// Optional path to config file
-    #[structopt(long, parse(from_os_str))]
+    #[structopt(short, long, parse(from_os_str))]
     config_path: Option<PathBuf>,
 
     /// Path to queries
@@ -51,7 +45,7 @@ struct Opt {
     #[structopt(short, long)]
     exclude: Vec<u8>,
 
-    /// Concurrency, determining the number of partitions for queries
+    /// Concurrency
     #[structopt(short, long)]
     concurrency: u8,
 
@@ -63,7 +57,6 @@ struct Opt {
 #[derive(Debug, PartialEq, Serialize, Default)]
 pub struct Results {
     system_time: u128,
-    datafusion_version: String,
     config: HashMap<String, String>,
     command_line_args: Vec<String>,
     register_tables_time: u128,
@@ -78,7 +71,6 @@ impl Results {
             .expect("Time went backwards");
         Self {
             system_time: current_time.as_millis(),
-            datafusion_version: DATAFUSION_VERSION.to_string(),
             config: HashMap::new(),
             command_line_args: vec![],
             register_tables_time: 0,
@@ -95,11 +87,13 @@ pub async fn main() -> Result<()> {
     }
 
     let opt = Opt::from_args();
-
     let query_path = format!("{}", opt.query_path.display());
     let output_path = format!("{}", opt.output.display());
 
-    let mut config = SessionConfig::new().with_target_partitions(opt.concurrency as usize);
+    let mut config = BallistaConfig::builder().set(
+        BALLISTA_DEFAULT_SHUFFLE_PARTITIONS,
+        &format!("{}", opt.concurrency),
+    );
 
     if let Some(config_path) = &opt.config_path {
         let file = File::open(config_path)?;
@@ -113,22 +107,22 @@ pub async fn main() -> Result<()> {
             let parts = line.split('=');
             let parts = parts.collect::<Vec<&str>>();
             if parts.len() == 2 {
-                config = config.set(parts[0], ScalarValue::Utf8(Some(parts[1].to_string())));
+                config = config.set(parts[0], parts[1]);
             } else {
                 println!("Warning! Skipping config entry {}", line);
             }
         }
     }
 
-    for entry in config.options().entries() {
-        if let Some(ref value) = entry.value {
-            results.config.insert(entry.key, value.to_string());
-        }
+    let config = config.build()?;
+
+    for (key, value) in config.settings() {
+        results.config.insert(key.to_string(), value.to_string());
     }
 
     // register all tables in data directory
     let start = Instant::now();
-    let ctx = SessionContext::new_with_config(config);
+    let ctx = BallistaContext::remote("localhost", 50050, &config).await?;
     for file in fs::read_dir(&opt.data_path)? {
         let file = file?;
         let file_path = file.path();
@@ -205,7 +199,7 @@ pub async fn main() -> Result<()> {
 }
 
 pub async fn execute_query(
-    ctx: &SessionContext,
+    ctx: &BallistaContext,
     query_path: &str,
     query_no: u8,
     debug: bool,
@@ -243,28 +237,17 @@ pub async fn execute_query(
 
             let start = Instant::now();
             let df = ctx.sql(sql).await?;
-            let batches = df.clone().collect().await?;
+            let _batches = df.clone().collect().await?;
             let duration = start.elapsed();
             total_duration_millis += duration.as_millis();
-
-            let row_count: usize = batches.iter().map(|b| b.num_rows()).sum();
-
             println!(
-                "Query {query_no}{file_suffix} executed in: {duration:?} and returned {row_count} rows",
+                "Query {}{} executed in: {:?}",
+                query_no, file_suffix, duration
             );
 
             if iteration == 0 {
-                let plan = df.clone().into_optimized_plan()?;
+                let plan = df.into_optimized_plan()?;
                 let formatted_query_plan = format!("{}", plan.display_indent());
-                if debug {
-                    println!("{}", formatted_query_plan);
-                }
-
-                let exec = df.create_physical_plan().await?;
-                if debug {
-                    println!("{}", displayable(exec.as_ref()).indent(false));
-                }
-
                 let filename = format!(
                     "{}/q{}{}_logical_plan.txt",
                     output_path, query_no, file_suffix
@@ -273,15 +256,20 @@ pub async fn execute_query(
                 write!(file, "{}", formatted_query_plan)?;
 
                 // write results to disk
-                if batches.is_empty() {
-                    println!("Empty result set returned");
-                } else {
-                    let filename = format!("{}/q{}{}.csv", output_path, query_no, file_suffix);
-                    let t = MemTable::try_new(batches[0].schema(), vec![batches])?;
-                    let df = ctx.read_table(Arc::new(t))?;
-                    df.write_csv(&filename, DataFrameWriteOptions::default(), None)
-                        .await?;
-                }
+
+                // TODO broken due to https://github.com/apache/arrow-ballista/issues/894
+                // if batches.is_empty() {
+                //     println!("Empty result set returned");
+                // } else {
+                //     let filename = format!("{}/q{}{}.csv", output_path, query_no, file_suffix);
+                //     let t: Arc<dyn TableProvider> =
+                //         Arc::new(MemTable::try_new(batches[0].schema(), vec![batches])?);
+                //     let table_name = format!("q{query_no}");
+                //     ctx.register_table(&table_name, t)?;
+                //     let df = ctx.sql(&format!("SELECT * FROM {table_name}")).await?;
+                //     df.write_csv(&filename, DataFrameWriteOptions::default(), None)
+                //         .await?;
+                // }
             }
         }
         durations.push(total_duration_millis);
