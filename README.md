@@ -72,7 +72,7 @@ comparing results from different benchmark runs.
 For example:
 
 ```shell
-python scripts/generate-comparison.py file1.json file2.json --labels "Spark" "Comet" --benchmark "TPC-H 100GB"
+python scripts/generate-comparison.py file1.json file2.json --labels "Spark" "Comet" --benchmark "tpch" --title "TPC-H 100GB"
 ```
 
 This will create image files in the current directory in PNG format.
