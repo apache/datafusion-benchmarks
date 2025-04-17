@@ -61,6 +61,7 @@ def main(benchmark: str, data_path: str, query_path: str, iterations: int, outpu
         print(f"Starting iteration {iteration} of {iterations}")
 
         for query in range(1, num_queries+1):
+            spark.catalog.clearCache()
             spark.sparkContext.setJobDescription(f"{benchmark} q{query}")
 
             # read text file
