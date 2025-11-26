@@ -1,6 +1,12 @@
 #!/bin/bash
-tpctools generate --benchmark tpcds \
-  --scale 100 \
-  --partitions 12 \
-  --generator-path /DSGen-software-code-3.2.0rc1/tools \
-  --output /data
+cd /dsgen-tools/tools
+
+for i in $(seq 1 12); do
+  mkdir -p /data/part_$i
+  ./dsdgen -scale 100 \
+           -dir /data/part_$i \
+           -parallel 12 \
+           -child $i \
+           -terminate n &
+done
+wait
