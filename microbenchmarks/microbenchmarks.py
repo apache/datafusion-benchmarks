@@ -236,9 +236,11 @@ def format_results_markdown(results: list[BenchmarkResult]) -> str:
     lines = [
         "# String Function Microbenchmarks: DataFusion vs DuckDB",
         "",
+        f"**DataFusion version:** {datafusion.__version__}  ",
+        f"**DuckDB version:** {duckdb.__version__}  ",
         f"**Rows:** {results[0].rows:,}",
         "",
-        "| Function | DataFusion (ms) | DuckDB (ms) | Speedup | Faster |",
+        f"| Function | DataFusion {datafusion.__version__} (ms) | DuckDB {duckdb.__version__} (ms) | Speedup | Faster |",
         "|----------|----------------:|------------:|--------:|--------|",
     ]
 

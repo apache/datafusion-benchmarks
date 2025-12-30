@@ -25,14 +25,6 @@ This directory contains microbenchmarks for comparing DataFusion and DuckDB perf
 
 The benchmarks generate synthetic data, write it to Parquet format, and then measure the execution time of various SQL functions across both DataFusion and DuckDB. Results include per-function timing comparisons and summary statistics.
 
-## Benchmark Suites
-
-Three benchmark suites are available:
-
-- **string**: String manipulation functions (trim, lower, upper, concat, substring, regex, etc.)
-- **temporal**: Date/time functions (extract, date_trunc, date_part, interval arithmetic, formatting)
-- **conditional**: Conditional expressions (CASE WHEN, COALESCE, NULLIF, GREATEST/LEAST)
-
 ## Setup
 
 Create a virtual environment and install dependencies:
@@ -46,17 +38,16 @@ pip install -r requirements.txt
 
 ## Usage
 
-Run a benchmark suite:
+Run a benchmark:
 
 ```shell
-python string_functions_benchmark.py --suite <suite_name>
+python microbenchmarks.py
 ```
 
 ### Options
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `--suite` | `string` | Benchmark suite to run: `string`, `temporal`, or `conditional` |
 | `--rows` | `1000000` | Number of rows in the generated test data |
 | `--warmup` | `2` | Number of warmup iterations before timing |
 | `--iterations` | `5` | Number of timed iterations (results are averaged) |
@@ -64,22 +55,22 @@ python string_functions_benchmark.py --suite <suite_name>
 
 ### Examples
 
-Run the string functions benchmark with default settings:
+Run the benchmark with default settings:
 
 ```shell
-python string_functions_benchmark.py
+python microbenchmark.py
 ```
 
-Run the temporal functions benchmark with 10 million rows:
+Run the benchmark with 10 million rows:
 
 ```shell
-python string_functions_benchmark.py --suite temporal --rows 10000000
+python microbenchmarks.py --rows 10000000
 ```
 
-Run the conditional expressions benchmark and save results to a file:
+Run the benchmark and save results to a file:
 
 ```shell
-python string_functions_benchmark.py --suite conditional --output results.md
+python microbenchmarks.py --output results.md
 ```
 
 ## Output
@@ -93,17 +84,3 @@ The benchmark outputs a markdown table comparing execution times:
 | ... | ... | ... | ... | ... |
 
 A summary section shows overall statistics including how many functions each engine won and total execution times.
-
-## Adding New Benchmarks
-
-To add new functions to an existing suite, add a `BenchmarkFunction` entry to the appropriate list in `string_functions_benchmark.py`:
-
-```python
-BenchmarkFunction(
-    "function_name",
-    "datafusion_sql_expression({col})",
-    "duckdb_sql_expression({col})"
-)
-```
-
-The placeholders (e.g., `{col}`, `{str_col}`, `{ts_col}`) are replaced with actual column names at runtime.
