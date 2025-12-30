@@ -25,6 +25,9 @@ This repository is intended as a central resource for documentation and scripts 
 industry standard TPC-H and TPC-DS benchmarks against DataFusion and its subprojects, as well as against other
 open-source query engines for comparison.
 
+Additionally, this repository contains [microbenchmarks](./microbenchmarks) for comparing individual SQL function
+performance between DataFusion and other engines like DuckDB.
+
 TPC-H and TPC-DS both operate on synthetic data, which can be generated at different "scale factors". A scale factor
 of 1 means that approximately 1 GB of CSV data is generated, and a scale factor of 1000 means that approximately 1 TB
 of data is generated.
