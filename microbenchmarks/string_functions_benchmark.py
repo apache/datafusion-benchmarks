@@ -149,15 +149,16 @@ def benchmark_duckdb(conn: duckdb.DuckDBPyConnection, expr: str,
     """Benchmark a query in DuckDB, return average time in ms."""
     query = f"SELECT {expr} FROM test_data"
 
-    # Warmup runs
+    # Use fetch_arrow_table() for fair comparison with DataFusion's collect()
+    # Both return Arrow data without Python object conversion overhead
     for _ in range(warmup):
-        conn.execute(query).fetchall()
+        conn.execute(query).fetch_arrow_table()
 
     # Timed runs
     times = []
     for _ in range(iterations):
         start = time.perf_counter()
-        conn.execute(query).fetchall()
+        conn.execute(query).fetch_arrow_table()
         end = time.perf_counter()
         times.append((end - start) * 1000)  # Convert to ms
 
