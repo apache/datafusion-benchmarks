@@ -73,7 +73,7 @@ STRING_FUNCTIONS = [
 ]
 
 
-def generate_test_data(num_rows: int = 1_000_000) -> pa.Table:
+def generate_test_data(num_rows: int = 1_000_000, use_string_view: bool = False) -> pa.Table:
     """Generate test data with various string patterns."""
     import random
     import string
@@ -103,23 +103,25 @@ def generate_test_data(num_rows: int = 1_000_000) -> pa.Table:
             s = ''.join(random.choices(string.ascii_letters + string.digits + ' ', k=length))
         strings.append(s)
 
+    str_type = pa.string_view() if use_string_view else pa.string()
     table = pa.table({
-        'str_col': pa.array(strings, type=pa.string())
+        'str_col': pa.array(strings, type=str_type)
     })
 
     return table
 
 
 def setup_datafusion(parquet_path: str) -> datafusion.SessionContext:
-    """Create and configure DataFusion context."""
-    ctx = datafusion.SessionContext()
+    """Create and configure DataFusion context with single thread/partition."""
+    config = datafusion.SessionConfig().with_target_partitions(1)
+    ctx = datafusion.SessionContext(config)
     ctx.register_parquet('test_data', parquet_path)
     return ctx
 
 
 def setup_duckdb(parquet_path: str) -> duckdb.DuckDBPyConnection:
-    """Create and configure DuckDB connection."""
-    conn = duckdb.connect(':memory:')
+    """Create and configure DuckDB connection with single thread."""
+    conn = duckdb.connect(':memory:', config={'threads': 1})
     conn.execute(f"CREATE VIEW test_data AS SELECT * FROM read_parquet('{parquet_path}')")
     return conn
 
@@ -167,7 +169,8 @@ def benchmark_duckdb(conn: duckdb.DuckDBPyConnection, expr: str,
 
 def run_benchmarks(num_rows: int = 1_000_000,
                    warmup: int = 2,
-                   iterations: int = 5) -> list[BenchmarkResult]:
+                   iterations: int = 5,
+                   use_string_view: bool = False) -> list[BenchmarkResult]:
     """Run all benchmarks and return results."""
     results = []
 
@@ -175,8 +178,9 @@ def run_benchmarks(num_rows: int = 1_000_000,
         parquet_path = os.path.join(tmpdir, 'test_data.parquet')
 
         # Generate and save test data
-        print(f"Generating {num_rows:,} rows of test data...")
-        table = generate_test_data(num_rows)
+        str_type = "StringView" if use_string_view else "String"
+        print(f"Generating {num_rows:,} rows of test data (type: {str_type})...")
+        table = generate_test_data(num_rows, use_string_view)
         pq.write_table(table, parquet_path)
         print(f"Parquet file written to: {parquet_path}")
         print(f"File size: {os.path.getsize(parquet_path) / 1024 / 1024:.2f} MB")
@@ -231,14 +235,17 @@ def run_benchmarks(num_rows: int = 1_000_000,
     return results
 
 
-def format_results_markdown(results: list[BenchmarkResult]) -> str:
+def format_results_markdown(results: list[BenchmarkResult], use_string_view: bool = False) -> str:
     """Format benchmark results as a markdown table."""
+    str_type = "StringView" if use_string_view else "String"
     lines = [
         "# String Function Microbenchmarks: DataFusion vs DuckDB",
         "",
         f"**DataFusion version:** {datafusion.__version__}  ",
         f"**DuckDB version:** {duckdb.__version__}  ",
-        f"**Rows:** {results[0].rows:,}",
+        f"**Rows:** {results[0].rows:,}  ",
+        f"**String type:** {str_type}  ",
+        "**Configuration:** Single thread, single partition",
         "",
         f"| Function | DataFusion {datafusion.__version__} (ms) | DuckDB {duckdb.__version__} (ms) | Speedup | Faster |",
         "|----------|----------------:|------------:|--------:|--------|",
@@ -310,6 +317,10 @@ def main():
         "--output", type=str, default=None,
         help="Output file for markdown results (default: stdout)"
     )
+    parser.add_argument(
+        "--string-view", action="store_true",
+        help="Use StringView type instead of String (default: False)"
+    )
 
     args = parser.parse_args()
 
@@ -320,10 +331,11 @@ def main():
     results = run_benchmarks(
         num_rows=args.rows,
         warmup=args.warmup,
-        iterations=args.iterations
+        iterations=args.iterations,
+        use_string_view=args.string_view
     )
 
-    markdown = format_results_markdown(results)
+    markdown = format_results_markdown(results, use_string_view=args.string_view)
 
     print("\n" + "=" * 60)
     print("RESULTS")
