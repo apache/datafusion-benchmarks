@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
 """
 Microbenchmark comparing DataFusion and DuckDB performance
-for SQL string functions on Parquet files.
+for various SQL functions on Parquet files.
 """
 
 import tempfile
 import time
 import os
 from dataclasses import dataclass
-from pathlib import Path
 
-import pyarrow as pa
 import pyarrow.parquet as pq
 import datafusion
 import duckdb
+
+from suites import get_suite, list_suites, Suite
 
 
 @dataclass
@@ -30,85 +30,6 @@ class BenchmarkResult:
         if self.datafusion_time_ms == 0:
             return float('inf')
         return self.duckdb_time_ms / self.datafusion_time_ms
-
-
-@dataclass
-class StringFunction:
-    """Defines a string function with syntax for both engines."""
-    name: str
-    datafusion_expr: str  # Expression using {col} as placeholder for column name
-    duckdb_expr: str      # Expression using {col} as placeholder for column name
-
-
-# String functions to benchmark
-# {col} will be replaced with the actual column name
-STRING_FUNCTIONS = [
-    StringFunction("trim", "trim({col})", "trim({col})"),
-    StringFunction("ltrim", "ltrim({col})", "ltrim({col})"),
-    StringFunction("rtrim", "rtrim({col})", "rtrim({col})"),
-    StringFunction("lower", "lower({col})", "lower({col})"),
-    StringFunction("upper", "upper({col})", "upper({col})"),
-    StringFunction("length", "length({col})", "length({col})"),
-    StringFunction("char_length", "char_length({col})", "length({col})"),
-    StringFunction("reverse", "reverse({col})", "reverse({col})"),
-    StringFunction("repeat_3", "repeat({col}, 3)", "repeat({col}, 3)"),
-    StringFunction("concat", "concat({col}, {col})", "concat({col}, {col})"),
-    StringFunction("concat_ws", "concat_ws('-', {col}, {col})", "concat_ws('-', {col}, {col})"),
-    StringFunction("substring_1_5", "substring({col}, 1, 5)", "substring({col}, 1, 5)"),
-    StringFunction("left_5", "left({col}, 5)", "left({col}, 5)"),
-    StringFunction("right_5", "right({col}, 5)", "right({col}, 5)"),
-    StringFunction("lpad_20", "lpad({col}, 20, '*')", "lpad({col}, 20, '*')"),
-    StringFunction("rpad_20", "rpad({col}, 20, '*')", "rpad({col}, 20, '*')"),
-    StringFunction("replace", "replace({col}, 'a', 'X')", "replace({col}, 'a', 'X')"),
-    StringFunction("translate", "translate({col}, 'aeiou', '12345')", "translate({col}, 'aeiou', '12345')"),
-    StringFunction("ascii", "ascii({col})", "ascii({col})"),
-    StringFunction("md5", "md5({col})", "md5({col})"),
-    StringFunction("sha256", "sha256({col})", "sha256({col})"),
-    StringFunction("btrim", "btrim({col}, ' ')", "trim({col}, ' ')"),
-    StringFunction("split_part", "split_part({col}, ' ', 1)", "split_part({col}, ' ', 1)"),
-    StringFunction("starts_with", "starts_with({col}, 'test')", "starts_with({col}, 'test')"),
-    StringFunction("ends_with", "ends_with({col}, 'data')", "ends_with({col}, 'data')"),
-    StringFunction("strpos", "strpos({col}, 'e')", "strpos({col}, 'e')"),
-    StringFunction("regexp_replace", "regexp_replace({col}, '[aeiou]', '*')", "regexp_replace({col}, '[aeiou]', '*', 'g')"),
-]
-
-
-def generate_test_data(num_rows: int = 1_000_000, use_string_view: bool = False) -> pa.Table:
-    """Generate test data with various string patterns."""
-    import random
-    import string
-
-    random.seed(42)  # For reproducibility
-
-    # Generate diverse string data
-    strings = []
-    for i in range(num_rows):
-        # Mix of different string patterns
-        pattern_type = i % 5
-        if pattern_type == 0:
-            # Short strings with spaces
-            s = f"  test_{i % 1000}  "
-        elif pattern_type == 1:
-            # Longer strings
-            s = ''.join(random.choices(string.ascii_lowercase, k=20))
-        elif pattern_type == 2:
-            # Mixed case with numbers
-            s = f"TestData_{i}_Value"
-        elif pattern_type == 3:
-            # Strings with special patterns
-            s = f"hello world {i % 100} data"
-        else:
-            # Random length strings
-            length = random.randint(5, 50)
-            s = ''.join(random.choices(string.ascii_letters + string.digits + ' ', k=length))
-        strings.append(s)
-
-    str_type = pa.string_view() if use_string_view else pa.string()
-    table = pa.table({
-        'str_col': pa.array(strings, type=str_type)
-    })
-
-    return table
 
 
 def setup_datafusion(parquet_path: str) -> datafusion.SessionContext:
@@ -167,20 +88,20 @@ def benchmark_duckdb(conn: duckdb.DuckDBPyConnection, expr: str,
     return sum(times) / len(times)
 
 
-def run_benchmarks(num_rows: int = 1_000_000,
+def run_benchmarks(suite: Suite,
+                   num_rows: int = 1_000_000,
                    warmup: int = 2,
                    iterations: int = 5,
                    use_string_view: bool = False) -> list[BenchmarkResult]:
-    """Run all benchmarks and return results."""
+    """Run all benchmarks for a suite and return results."""
     results = []
 
     with tempfile.TemporaryDirectory() as tmpdir:
         parquet_path = os.path.join(tmpdir, 'test_data.parquet')
 
         # Generate and save test data
-        str_type = "StringView" if use_string_view else "String"
-        print(f"Generating {num_rows:,} rows of test data (type: {str_type})...")
-        table = generate_test_data(num_rows, use_string_view)
+        print(f"Generating {num_rows:,} rows of test data for '{suite.name}' suite...")
+        table = suite.generate_data(num_rows, use_string_view)
         pq.write_table(table, parquet_path)
         print(f"Parquet file written to: {parquet_path}")
         print(f"File size: {os.path.getsize(parquet_path) / 1024 / 1024:.2f} MB")
@@ -195,8 +116,8 @@ def run_benchmarks(num_rows: int = 1_000_000,
         # Run benchmarks
         print(f"\nRunning benchmarks ({warmup} warmup, {iterations} iterations each)...\n")
 
-        col = 'str_col'
-        for func in STRING_FUNCTIONS:
+        col = suite.column_name
+        for func in suite.functions:
             df_expr = func.datafusion_expr.format(col=col)
             duck_expr = func.duckdb_expr.format(col=col)
 
@@ -235,12 +156,15 @@ def run_benchmarks(num_rows: int = 1_000_000,
     return results
 
 
-def format_results_markdown(results: list[BenchmarkResult], use_string_view: bool = False) -> str:
+def format_results_markdown(results: list[BenchmarkResult],
+                            suite: Suite,
+                            use_string_view: bool = False) -> str:
     """Format benchmark results as a markdown table."""
     str_type = "StringView" if use_string_view else "String"
     lines = [
-        "# String Function Microbenchmarks: DataFusion vs DuckDB",
+        f"# {suite.description}: DataFusion vs DuckDB",
         "",
+        f"**Suite:** {suite.name}  ",
         f"**DataFusion version:** {datafusion.__version__}  ",
         f"**DuckDB version:** {duckdb.__version__}  ",
         f"**Rows:** {results[0].rows:,}  ",
@@ -298,8 +222,15 @@ def format_results_markdown(results: list[BenchmarkResult], use_string_view: boo
 def main():
     import argparse
 
+    available_suites = list_suites()
+
     parser = argparse.ArgumentParser(
-        description="Benchmark string functions: DataFusion vs DuckDB"
+        description="Benchmark SQL functions: DataFusion vs DuckDB"
+    )
+    parser.add_argument(
+        "--suite", type=str, default="strings",
+        choices=available_suites,
+        help=f"Benchmark suite to run (default: strings). Available: {', '.join(available_suites)}"
     )
     parser.add_argument(
         "--rows", type=int, default=1_000_000,
@@ -324,18 +255,21 @@ def main():
 
     args = parser.parse_args()
 
+    suite = get_suite(args.suite)
+
     print("=" * 60)
-    print("String Function Microbenchmarks: DataFusion vs DuckDB")
+    print(f"{suite.description}: DataFusion vs DuckDB")
     print("=" * 60)
 
     results = run_benchmarks(
+        suite=suite,
         num_rows=args.rows,
         warmup=args.warmup,
         iterations=args.iterations,
         use_string_view=args.string_view
     )
 
-    markdown = format_results_markdown(results, use_string_view=args.string_view)
+    markdown = format_results_markdown(results, suite=suite, use_string_view=args.string_view)
 
     print("\n" + "=" * 60)
     print("RESULTS")
