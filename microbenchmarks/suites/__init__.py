@@ -26,11 +26,13 @@ class Suite:
 # Import suites to register them
 from . import strings
 from . import temporal
+from . import numeric
 
 # Registry of available suites
 SUITES: dict[str, Suite] = {
     'strings': strings.SUITE,
     'temporal': temporal.SUITE,
+    'numeric': numeric.SUITE,
 }
 
 

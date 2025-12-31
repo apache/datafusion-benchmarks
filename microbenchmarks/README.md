@@ -31,6 +31,7 @@ Benchmarks are organized into **suites**, each focusing on a specific category o
 |-------|-------------|-----------|
 | `strings` | String manipulation functions (trim, lower, upper, concat, etc.) | 27 |
 | `temporal` | Date/time functions (year, month, date_trunc, etc.) | 21 |
+| `numeric` | Math functions (sqrt, pow, sin, cos, log, round, etc.) | 38 |
 
 All benchmarks run in single-threaded mode for fair comparison between engines.
 
@@ -57,7 +58,7 @@ python microbenchmarks.py --suite strings
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `--suite` | `strings` | Benchmark suite to run (`strings`, `temporal`) |
+| `--suite` | `strings` | Benchmark suite to run (`strings`, `temporal`, `numeric`) |
 | `--rows` | `1000000` | Number of rows in the generated test data |
 | `--warmup` | `2` | Number of warmup iterations before timing |
 | `--iterations` | `5` | Number of timed iterations (results are averaged) |
