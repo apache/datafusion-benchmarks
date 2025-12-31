@@ -27,12 +27,14 @@ class Suite:
 from . import strings
 from . import temporal
 from . import numeric
+from . import conditional
 
 # Registry of available suites
 SUITES: dict[str, Suite] = {
     'strings': strings.SUITE,
     'temporal': temporal.SUITE,
     'numeric': numeric.SUITE,
+    'conditional': conditional.SUITE,
 }
 
 
