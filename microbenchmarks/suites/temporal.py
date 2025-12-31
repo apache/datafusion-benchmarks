@@ -10,16 +10,16 @@ from . import BenchmarkFunction, Suite
 
 FUNCTIONS = [
     # Date extraction functions
-    BenchmarkFunction("year", "year({col})", "year({col})"),
-    BenchmarkFunction("month", "month({col})", "month({col})"),
-    BenchmarkFunction("day", "day({col})", "day({col})"),
-    BenchmarkFunction("hour", "hour({col})", "hour({col})"),
-    BenchmarkFunction("minute", "minute({col})", "minute({col})"),
-    BenchmarkFunction("second", "second({col})", "second({col})"),
-    BenchmarkFunction("week", "week({col})", "week({col})"),
-    BenchmarkFunction("quarter", "quarter({col})", "quarter({col})"),
-    BenchmarkFunction("day_of_week", "extract(dow from {col})", "dayofweek({col})"),
-    BenchmarkFunction("day_of_year", "extract(doy from {col})", "dayofyear({col})"),
+    BenchmarkFunction("year", "date_part('year', {col})", "year({col})"),
+    BenchmarkFunction("month", "date_part('month', {col})", "month({col})"),
+    BenchmarkFunction("day", "date_part('day', {col})", "day({col})"),
+    BenchmarkFunction("hour", "date_part('hour', {col})", "hour({col})"),
+    BenchmarkFunction("minute", "date_part('minute', {col})", "minute({col})"),
+    BenchmarkFunction("second", "date_part('second', {col})", "second({col})"),
+    BenchmarkFunction("week", "date_part('week', {col})", "week({col})"),
+    BenchmarkFunction("quarter", "date_part('quarter', {col})", "quarter({col})"),
+    BenchmarkFunction("day_of_week", "date_part('dow', {col})", "dayofweek({col})"),
+    BenchmarkFunction("day_of_year", "date_part('doy', {col})", "dayofyear({col})"),
 
     # Date truncation
     BenchmarkFunction("date_trunc_day", "date_trunc('day', {col})", "date_trunc('day', {col})"),
