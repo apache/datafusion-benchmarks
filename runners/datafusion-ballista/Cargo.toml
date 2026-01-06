@@ -1,0 +1,16 @@
+[package]
+name = "ballista-tpcbench"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+publish = false
+
+[dependencies]
+arrow = { version = "51.0.0", features = [ "ipc_compression" ] }
+ballista = { git = "https://github.com/andygrove/arrow-ballista", rev = "1648bbe174b080a5f4e13113281b8d1e8bf1e3ce" }
+datafusion = "37.1.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0.91"
+serde_yaml = "0.9.16"
+structopt = "0.3.26"
+tokio = { version = "^1.0", features = ["rt-multi-thread"] }
