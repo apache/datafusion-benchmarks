@@ -1,4 +1,9 @@
 venv
 .idea
 *.json
+*.yaml
 *.png
+q*.txt
+q*.csv
+tpc*.zip
+results.csv
