@@ -565,19 +565,24 @@ def convert_dat_to_parquet(ctx: SessionContext, table: str, dat_filename: str, f
     print(f"Converting {dat_filename} to {parquet_filename} ...")
 
     table_schema = all_schemas[table].copy()
-
-    # Pre-collect the output columns so we can ignore the null field we add
-    # in to handle the trailing | in the file
     output_cols = [r.name for r in table_schema]
 
-    # Trailing | requires extra field for in processing
-    table_schema.append(pyarrow.field("some_null", pyarrow.null(), nullable=True))
+    # Detect trailing | delimiter (older dsdgen versions add it as a field
+    # terminator, creating an extra empty field beyond the schema columns)
+    with open(dat_filename, 'r') as f:
+        first_line = f.readline().rstrip('\n')
+    num_csv_fields = len(first_line.split('|'))
+    has_trailing_pipe = num_csv_fields > len(table_schema)
+
+    if has_trailing_pipe:
+        # Trailing | requires extra field for processing
+        table_schema.append(pyarrow.field("some_null", pyarrow.null(), nullable=True))
 
     schema = pyarrow.schema(table_schema)
 
     df = ctx.read_csv(dat_filename, schema=schema, has_header=False, file_extension=file_extension, delimiter="|")
-    df = df.select_columns(*output_cols)
-    df.write_parquet(parquet_filename, compression="snappy")
+    df = df.select(*output_cols)
+    df.write_parquet(parquet_filename, compression="zstd", compression_level=19)
 
 def generate_tpcds(scale_factor: int, partitions: int):
     pass
